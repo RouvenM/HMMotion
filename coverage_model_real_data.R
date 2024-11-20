@@ -107,7 +107,9 @@ tracking_presnap = tracking %>%
   left_join(., plays %>% dplyr::select(playId, gameId, possessionTeam, pff_manZone), 
             by = c("playId", "gameId")) %>% 
   mutate(off_def = ifelse(club == possessionTeam, 1, 0)) %>% 
-  filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE")))
+  filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE"))) %>% 
+  mutate(y = y - 53.3/2) %>% # center y-coordinate
+  filter(playId == 85)
 
 # Offensivspieler-Daten extrahieren
 off_data <- tracking_presnap %>%
@@ -128,27 +130,29 @@ def_data <- tracking_presnap %>%
 
 # Daten zusammenführen
 data <- def_data %>%
-  left_join(off_data, by = "time") %>% filter(playId == 622)
+  left_join(off_data, by = "time")
+
+data = data[-(1:39),]
 
 
 # Fit model ---------------------------------------------------------------
 
 ## deterministic initial distribution
-n_att = 6
+n_att = 5
 
 Delta = t(
   sapply(split(data, data$nflId),
          function(x){
            delta = numeric(n_att)
-           delta[which.min(abs(x$y[1] - x[1,23:28]))] = 1
+           delta[which.min(abs(x$y[1] - x[1, 22 + 1:n_att]))] = 1
            delta
          })
 )
 
 dat = list(y_pos = data$y,
-           X = as.matrix(data[,23:28]),
+           X = as.matrix(data[, 22 + 1:n_att]),
            ID = data$nflId,
-           n_att = 6, 
+           n_att = n_att, 
            Delta = as.matrix(Delta))
 
 par = list(eta = rep(-4, n_att * (n_att - 1)),
@@ -167,6 +171,7 @@ nll = function(par){
   # alpha * X + (1-alpha) * y_middle
   Mu = alpha * X
   REPORT(Mu)
+  REPORT(alpha)
   
   allprobs = matrix(1, length(y_pos), n_att)
   ind = which(!is.na(y_pos))
@@ -177,23 +182,55 @@ nll = function(par){
   -forward(Delta, Gamma, allprobs, trackID = ID)
 }
 
+# all off-diagonal probablities are the same
 map = list(eta = factor(rep(1, n_att * (n_att - 1))))
+
 obj = MakeADFun(nll, par, map = map)
 opt = nlminb(obj$par, obj$fn, obj$gr)
 
 mod = obj$report()
-Delta = mod$Delta
+Delta = mod$delta
 Gamma = mod$Gamma
 allprobs = mod$allprobs
 trackID = mod$trackID
+(alpha = mod$alpha)
 
 probs = stateprobs(mod = mod)
 colnames(probs) = paste0("attacker_", 1:n_att)
-probs = cbind(trackID, probs)
+probs = cbind(ID = trackID, probs)
 
-plot(probs[1,], type = "h")
-for(t in 2:n_obs){
-  plot(probs[t,], type = "h")
+probs = split(as.data.frame(probs), probs[,1])
+probs = lapply(probs, as.matrix)
+
+def = 1
+probs[[def]][1,1]
+start = 1
+plot(probs[[def]][start,-1], type = "h", ylim = c(0,1))
+for(t in (start + 1) : nrow(probs[[def]])){
+  plot(probs[[def]][t,-1], type = "h", ylim = c(0,1), main = paste("Time:", t/10))
   Sys.sleep(0.1)
 }
 
+# which defender
+def_ids = tracking_presnap %>% 
+  filter(off_def == 0) %>% 
+  pull(nflId) %>% 
+  unique() 
+
+players %>% filter(nflId %in% def_ids)
+
+# which offenders
+att_ids = tracking_presnap %>% 
+  filter(off_def == 1) %>% 
+  pull(nflId) %>% 
+  unique() 
+
+players %>% filter(nflId %in% att_ids)
+
+plays %>% 
+  filter(gameId == tracking_data$gameId[1]) %>% 
+  filter(quarter == 1) %>% 
+  mutate(gameClockNum = as.numeric(str_sub(gameClock, 1, 2)) * 60 + as.numeric(str_sub(gameClock, 4, 5))) %>% 
+  arrange(desc(gameClockNum)) %>% 
+  select(playId)
+  
