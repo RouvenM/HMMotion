@@ -107,7 +107,7 @@ tracking_presnap = tracking %>%
   left_join(., plays %>% dplyr::select(playId, gameId, possessionTeam, pff_manZone), 
             by = c("playId", "gameId")) %>% 
   mutate(off_def = ifelse(club == possessionTeam, 1, 0)) %>% 
-  filter(!(position %in% c("T", "G", "C", NA)))
+  filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE")))
 
 # Offensivspieler-Daten extrahieren
 off_data <- tracking_presnap %>%
