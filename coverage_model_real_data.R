@@ -26,7 +26,7 @@ data = cbind(data, X)
 
 ## likelihood function
 
-# devtools::install_github("janoleko/LaMa")
+#devtools::install_github("janoleko/LaMa")
 library(LaMa)
            
 nll = function(par){
@@ -98,9 +98,12 @@ tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
 plays = read.csv("plays.csv")
 
-tracking = tracking_data %>% 
-  filter(gameId == tracking_data$gameId[1])
+# Spiel 2, playId 224 als Beispiel benutzen (Lavante David geht mit Pollard mit und kreuzt CeeDee Lamb auf dem Weg dorthin)
 
+tracking = tracking_data %>% 
+  filter(gameId == unique(tracking_data$gameId)[2])
+
+rm(tracking_data)
 tracking_presnap = tracking %>% 
   filter(frameType == "BEFORE_SNAP") %>% 
   left_join(., players %>% dplyr::select(nflId, position), by = "nflId") %>% 
@@ -109,7 +112,7 @@ tracking_presnap = tracking %>%
   mutate(off_def = ifelse(club == possessionTeam, 1, 0)) %>% 
   filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE"))) %>% 
   mutate(y = y - 53.3/2) %>% # center y-coordinate
-  filter(playId == 85)
+  filter(playId == 224)
 
 # Offensivspieler-Daten extrahieren
 off_data <- tracking_presnap %>%
@@ -124,6 +127,15 @@ off_data <- tracking_presnap %>%
     names_glue = "player{off_num}_{.value}" # Benenne die Spalten als player1_x, player1_y, etc.
   )
 
+# off_data <- tracking_presnap %>%
+#   filter(off_def == 1) %>%
+#   select(time, nflId, y) %>%
+#   pivot_wider(
+#     names_from = nflId,
+#     values_from = c(y),
+#     names_glue = "player{nflId}_{.value}"
+#   )
+
 # Defensivspieler-Daten extrahieren
 def_data <- tracking_presnap %>%
   filter(off_def == 0)
@@ -132,7 +144,15 @@ def_data <- tracking_presnap %>%
 data <- def_data %>%
   left_join(off_data, by = "time")
 
-data = data[-(1:39),]
+data = data %>% filter(frameId >= 10)
+
+(start = data %>% filter(frameId == 40))
+
+# start$cov = apply(Delta, 1, function(row) which(row == 1))
+# 
+# players %>% filter(nflId %in% att_ids) -> off_players
+# start$cov_att = off_players$displayName[start$cov]
+# start %>% select(displayName, cov_att)
 
 
 # Fit model ---------------------------------------------------------------
@@ -189,7 +209,7 @@ obj = MakeADFun(nll, par, map = map)
 opt = nlminb(obj$par, obj$fn, obj$gr)
 
 mod = obj$report()
-Delta = mod$delta
+(Delta = mod$delta)
 Gamma = mod$Gamma
 allprobs = mod$allprobs
 trackID = mod$trackID
@@ -220,17 +240,18 @@ def_ids = tracking_presnap %>%
 players %>% filter(nflId %in% def_ids)
 
 # which offenders
-att_ids = tracking_presnap %>% 
+(att_ids = tracking_presnap %>% 
   filter(off_def == 1) %>% 
   pull(nflId) %>% 
-  unique() 
+  unique()) 
 
 players %>% filter(nflId %in% att_ids)
 
 plays %>% 
-  filter(gameId == tracking_data$gameId[1]) %>% 
-  filter(quarter == 1) %>% 
+  filter(gameId == tracking$gameId[2]) %>% 
   mutate(gameClockNum = as.numeric(str_sub(gameClock, 1, 2)) * 60 + as.numeric(str_sub(gameClock, 4, 5))) %>% 
   arrange(desc(gameClockNum)) %>% 
+  filter(pff_manZone == "Man") %>%
+  View()
   select(playId)
   
