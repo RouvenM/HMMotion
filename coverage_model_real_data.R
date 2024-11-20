@@ -132,8 +132,6 @@ def_data <- tracking_presnap %>%
 data <- def_data %>%
   left_join(off_data, by = "time")
 
-data = data[-(1:39),]
-
 
 # Fit model ---------------------------------------------------------------
 
@@ -164,14 +162,13 @@ nll = function(par){
   
   Gamma = tpm(eta)
   
-  sigma = exp(logsigma)
-  alpha = plogis(logitalpha)
+  sigma = exp(logsigma); REPORT(sigma)
+  alpha = plogis(logitalpha); REPORT(alpha)
   
   # assuming y variable is centered -> pulling to the middle
   # alpha * X + (1-alpha) * y_middle
   Mu = alpha * X
   REPORT(Mu)
-  REPORT(alpha)
   
   allprobs = matrix(1, length(y_pos), n_att)
   ind = which(!is.na(y_pos))
@@ -194,6 +191,7 @@ Gamma = mod$Gamma
 allprobs = mod$allprobs
 trackID = mod$trackID
 (alpha = mod$alpha)
+(sigma = mod$sigma)
 
 probs = stateprobs(mod = mod)
 colnames(probs) = paste0("attacker_", 1:n_att)
