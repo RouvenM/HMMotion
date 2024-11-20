@@ -1,6 +1,11 @@
+
+#### BDB 2025 - Coverage model ####
+
+# Packages ----------------------------------------------------------------
+
 library(dplyr)
 library(tidyverse)
-# BDB 2025 - Coverage -----------------------------------------------------
+
 
 ## data looks like
 
@@ -83,7 +88,10 @@ for(t in 2:n_obs){
   Sys.sleep(0.1)
 }
 
-# Real Data
+
+
+# With real data ----------------------------------------------------------
+
 setwd("C:/Users/michels/sciebo/BDB 2025")
 tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
