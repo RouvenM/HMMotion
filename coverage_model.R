@@ -20,6 +20,7 @@ data = cbind(data, X)
 
 ## likelihood function
 
+# devtools::install_github("janoleko/LaMa")
 library(LaMa)
            
 nll = function(par){
