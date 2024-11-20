@@ -98,9 +98,11 @@ tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
 plays = read.csv("plays.csv")
 
-tracking = tracking_data %>% filter(gameId == tracking_data$gameId[1])
+tracking = tracking_data %>% 
+  filter(gameId == tracking_data$gameId[1])
 
-tracking_presnap = tracking %>% filter(frameType == "BEFORE_SNAP") %>% 
+tracking_presnap = tracking %>% 
+  filter(frameType == "BEFORE_SNAP") %>% 
   left_join(., players %>% dplyr::select(nflId, position), by = "nflId") %>% 
   left_join(., plays %>% dplyr::select(playId, gameId, possessionTeam, pff_manZone), 
             by = c("playId", "gameId")) %>% 
@@ -128,7 +130,9 @@ def_data <- tracking_presnap %>%
 data <- def_data %>%
   left_join(off_data, by = "time") %>% filter(playId == 622)
 
-## fit model
+
+# Fit model ---------------------------------------------------------------
+
 ## deterministic initial distribution
 n_att = 6
 
@@ -142,7 +146,7 @@ Delta = t(
 )
 
 dat = list(y_pos = data$y,
-           X = data[,23:28],
+           X = as.matrix(data[,23:28]),
            ID = data$nflId,
            n_att = 6, 
            Delta = as.matrix(Delta))
@@ -161,8 +165,7 @@ nll = function(par){
   
   # assuming y variable is centered -> pulling to the middle
   # alpha * X + (1-alpha) * y_middle
-  #Mu = alpha * X
-  Mu = X
+  Mu = alpha * X
   REPORT(Mu)
   
   allprobs = matrix(1, length(y_pos), n_att)
