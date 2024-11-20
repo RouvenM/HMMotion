@@ -93,7 +93,7 @@ for(t in 2:n_obs){
 
 # With real data ----------------------------------------------------------
 
-setwd("C:/Users/michels/sciebo/BDB 2025")
+setwd("~/Sciebo/BDB 2025")
 tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
 plays = read.csv("plays.csv")
@@ -174,8 +174,8 @@ nll = function(par){
   -forward(Delta, Gamma, allprobs, trackID = ID)
 }
 
-
-obj = MakeADFun(nll, par)
+map = list(eta = factor(rep(1, n_att * (n_att - 1))))
+obj = MakeADFun(nll, par, map = map)
 opt = nlminb(obj$par, obj$fn, obj$gr)
 
 mod = obj$report()
@@ -185,6 +185,9 @@ allprobs = mod$allprobs
 trackID = mod$trackID
 
 probs = stateprobs(mod = mod)
+colnames(probs) = paste0("attacker_", 1:n_att)
+probs = cbind(trackID, probs)
+
 plot(probs[1,], type = "h")
 for(t in 2:n_obs){
   plot(probs[t,], type = "h")
