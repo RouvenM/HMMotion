@@ -255,3 +255,9 @@ plays %>%
   View()
   select(playId)
   
+new_colnames = c("defender_Id", att_ids)
+probs <- lapply(probs, function(df) {
+    colnames(df) <- new_colnames
+    return(df)
+})
+  
