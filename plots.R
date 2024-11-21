@@ -8,20 +8,13 @@ tracking_data = read.csv("tracking_week_1.csv")
 #players = read.csv("players.csv")
 plays = read.csv("plays.csv")
 
-# Beispiel-Daten: Spielerbewegungen
-# Spalten: time (Zeit), player_id (Spieler-ID), x (x-Koordinate), y (y-Koordinate)
-tracking_data <- data.frame(
-  time = rep(1:10, each = 5),
-  player_id = rep(1:5, times = 10),
-  x = runif(50, 0, 100), # Beispiel: x-Koordinate zwischen 0 und 100
-  y = runif(50, 0, 50)   # Beispiel: y-Koordinate zwischen 0 und 50
-)
-
+# Tracking DATA Week 1 Dallas vs Tampa Bay
 tracking_dal_tb = tracking_data %>% 
   filter(gameId == unique(tracking_data$gameId)[2]) %>% 
   filter(playId == 224) %>% filter(frameId >= 10) %>% 
   filter(frameType == "BEFORE_SNAP")
 
+# Line of Scrimmage
 los = plays %>% 
   filter(gameId == (tracking_dal_tb$gameId)[1]) %>% 
   filter(playId == 224) %>% pull(absoluteYardlineNumber)
@@ -34,7 +27,7 @@ field_width <- 53.3
 
 team_colors = c("blue4", "black", "red")
 
-# probs are coming from the fitted model
+# probs are coming from the fitted model, must be taken from there
 data1 = list()
 defender_data = NULL
 for (i in 1:length(probs)) {
