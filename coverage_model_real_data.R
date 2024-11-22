@@ -103,6 +103,8 @@ plays = read.csv("plays.csv")
 tracking = tracking_data %>% 
   filter(gameId == unique(tracking_data$gameId)[2])
 
+tracking = tracking_data %>% filter(gameId == 2022091110)
+
 rm(tracking_data)
 tracking_presnap = tracking %>% 
   filter(frameType == "BEFORE_SNAP") %>% 
@@ -112,7 +114,7 @@ tracking_presnap = tracking %>%
   mutate(off_def = ifelse(club == possessionTeam, 1, 0)) %>% 
   filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE"))) %>% 
   mutate(y = y - 53.3/2) %>% # center y-coordinate
-  filter(playId == 224)
+  filter(playId == 291)
 
 # Offensivspieler-Daten extrahieren
 off_data <- tracking_presnap %>%
@@ -144,7 +146,8 @@ def_data <- tracking_presnap %>%
 data <- def_data %>%
   left_join(off_data, by = "time")
 
-data = data %>% filter(frameId >= 10)
+index = data$frameId[which(data$event == "line_set")[1]]
+data = data %>% filter(frameId >= index)
 
 (start = data %>% filter(frameId == 40))
 
@@ -222,7 +225,7 @@ probs = cbind(ID = trackID, probs)
 probs = split(as.data.frame(probs), probs[,1])
 probs = lapply(probs, as.matrix)
 
-def = 1
+def = 8
 probs[[def]][1,1]
 start = 1
 plot(probs[[def]][start,-1], type = "h", ylim = c(0,1))
@@ -261,3 +264,7 @@ probs <- lapply(probs, function(df) {
     return(df)
 })
   
+# Some Ideas
+
+# only defenders in the vicinity of the los
+# only defenders that are not in the vicinity of the ball (i.e. ILB as DE raus)
