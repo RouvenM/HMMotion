@@ -4,20 +4,51 @@ output: html_document
 date: "`r Sys.Date()`"
 ---
 
+#### <span style="color: grey;"> Submission to metric track </span>
+
 ```{r setup, echo = FALSE, warning=FALSE, message=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction
 
-The distinction between man- and zone defense is an important strategic decision of a defensive coordinator in each play in American football. While experienced coaches and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to automate this process. This project aims to leverage hidden Markov models (HMMs) to accurately classify defensive strategies --- man or zone coverage --- based on player movement data. By modeling hidden states that represent the offensive player to be guarded, this approach provides a data-driven framework for unraveling the complexity of defensive patterns and enables real-time tactical insights for coaching and analysis.
+Choosing between man- and zone coverage is one of the most important strategic decisions of a defensive coordinator prior to each play in American football. While experienced coaches and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer the underlying tactic.
+This project aims to leverage hidden Markov models (HMMs) to detect defensive strategies --- man or zone coverage --- based on pre-snap player movement data. 
+By modeling hidden states that represent the offensive player to be guarded, this approach provides a data-driven framework for unraveling the complexity of defensive patterns and enables real-time tactical insights for coaching and analysis.
 
-```{r cars}
-summary(cars)
-```
+## Data
+
+This video displays a touchdown from the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) travels from the left side to the right side, followed by the defender Marco Wilson (AZ #20), i.e.\ a clear indication for man-coverage. 
 
 <center>
 <video width="600" height="400" controls>
-  <source src="play_mov.mp4" type="video/mp4">
+  <source src="kc_az_td.mp4" type="video/mp4">
 </video>
 </center>
+
+## Analysis 
+
+Our analysis comprises different steps:
+
+#### 1. Pre-Motion Analysis
+We train a model to predict whether the defense plays a man- or zone coverage scheme. The 
+model uses the previously described features, blablabla
+
+#### 2. HMM Analysis
+We model the movements of defensive players during the phase of pre-snap motion within a hidden Markov framework, in which the underlying states represent the offensive players to be guarded (see Franks et al., 2015 for a similar approach in basketball).
+
+#### 3. Post-Motion Analysis
+We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate the results from the HMM analysis.
+
+#### 4. Motion evaluation
+By comparing the predictive performance of our pre-motion model and our post-motion model we can determine the effectiveness of motion to detect the correct defensive scheme.
+
+## Code
+
+All code for data preprocessing, model training, prediction and player evaluation can be found [here](https://github.com/janoleko/BDB-2025/).
+
+## References
+*Franks A, Miller A, Bornn L, Goldsberry K (2015). Characterizing the Spatial Structure of Defensive Skill in Professional Basketball. The Annals of Applied Statistics, 9(1), DOI:10.1214/14-AOAS799
+
+*Zucchini W, MacDonald I, Langrock R (2016). Hidden Markov Models for Time Series - An Introduction Using R. CRC Press
+
