@@ -1,0 +1,23 @@
+---
+title: "Using HMMs for pre-snap coverage detection"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, echo = FALSE, warning=FALSE, message=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The distinction between man- and zone defense is an important strategic decision of a defensive coordinator in each play in American football. While experienced coaches and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to automate this process. This project aims to leverage hidden Markov models (HMMs) to accurately classify defensive strategies --- man or zone coverage --- based on player movement data. By modeling hidden states that represent the offensive player to be guarded, this approach provides a data-driven framework for unraveling the complexity of defensive patterns and enables real-time tactical insights for coaching and analysis.
+
+```{r cars}
+summary(cars)
+```
+
+<center>
+<video width="600" height="400" controls>
+  <source src="play_mov.mp4" type="video/mp4">
+</video>
+</center>
