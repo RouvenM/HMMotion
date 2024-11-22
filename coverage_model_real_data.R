@@ -146,8 +146,7 @@ def_data <- tracking_presnap %>%
 data <- def_data %>%
   left_join(off_data, by = "time")
 
-index = data$frameId[which(data$event == "line_set")[1]]
-data = data %>% filter(frameId >= index)
+data = data %>% filter(frameId >= frameId[which(event == "line_set")[1]])
 
 (start = data %>% filter(frameId == 40))
 
