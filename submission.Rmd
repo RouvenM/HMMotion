@@ -35,7 +35,7 @@ We train a model to predict whether the defense plays a man- or zone coverage sc
 model uses the previously described features, blablabla
 
 #### 2. HMM Analysis
-We model the movements of defensive players during the phase of pre-snap motion within a hidden Markov framework, in which the underlying states represent the offensive players to be guarded (see Franks et al., 2015 for a similar approach in basketball).
+We model the movements of defensive players during the phase of pre-snap motion within a hidden Markov framework, in which the underlying states represent the offensive players to be guarded (see Franks et al., 2015 for a similar approach in basketball). In contrast to Groom et al., 2024, who enforce a state to proxy zone coverage during corner kicks in soccer, we cannot do that as the classical zones in American football will only be covered post-snap. To remidiate this problem, we aim to derive the decision of man- or zone coverage from the number of switches for individual players. In particular, a low number of switches when offensive players are in motion indicates man coverage whereas a higher number indicates zone coverage.
 
 #### 3. Post-Motion Analysis
 We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate the results from the HMM analysis.
