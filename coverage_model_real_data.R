@@ -5,7 +5,8 @@
 
 library(dplyr)
 library(tidyverse)
-
+#devtools::install_github("janoleko/LaMa")
+library(LaMa)
 
 ## data looks like
 
@@ -26,8 +27,7 @@ data = cbind(data, X)
 
 ## likelihood function
 
-#devtools::install_github("janoleko/LaMa")
-library(LaMa)
+
            
 nll = function(par){
   getAll(par, dat)
@@ -98,7 +98,8 @@ tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
 plays = read.csv("plays.csv")
 
-# Spiel 2, playId 224 als Beispiel benutzen (Lavante David geht mit Pollard mit und kreuzt CeeDee Lamb auf dem Weg dorthin)
+# Spiel 2022091110, playId 291 als Beispiel benutzen
+# Marco Wilson geht mit Mecole Hardman die ganze Zeit in Man Coverage mit
 
 tracking = tracking_data %>% 
   filter(gameId == unique(tracking_data$gameId)[2])
@@ -106,15 +107,22 @@ tracking = tracking_data %>%
 tracking = tracking_data %>% filter(gameId == 2022091110)
 
 rm(tracking_data)
-tracking_presnap = tracking %>% 
+
+# Filter out for data before the snap, i.e. the time of the motion
+# Connect with player and players df to receive information
+# Filter out the ball, offensive and defensive line and the QB
+tracking_presnap1 = tracking %>% 
   filter(frameType == "BEFORE_SNAP") %>% 
   left_join(., players %>% dplyr::select(nflId, position), by = "nflId") %>% 
-  left_join(., plays %>% dplyr::select(playId, gameId, possessionTeam, pff_manZone), 
+  left_join(., plays %>% dplyr::select(playId, gameId, absoluteYardlineNumber, possessionTeam, pff_manZone), 
             by = c("playId", "gameId")) %>% 
   mutate(off_def = ifelse(club == possessionTeam, 1, 0)) %>% 
-  filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE"))) %>% 
   mutate(y = y - 53.3/2) %>% # center y-coordinate
   filter(playId == 291)
+
+# Positional adjustment
+tracking_presnap = tracking_presnap1 %>% 
+  filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE")))
 
 # Offensivspieler-Daten extrahieren
 off_data <- tracking_presnap %>%
@@ -146,19 +154,16 @@ def_data <- tracking_presnap %>%
 data <- def_data %>%
   left_join(off_data, by = "time")
 
+# Take out the time where teams are in the huddle, i.e. before first line up
 data = data %>% filter(frameId >= frameId[which(event == "line_set")[1]])
 
-(start = data %>% filter(frameId == 40))
-
-# start$cov = apply(Delta, 1, function(row) which(row == 1))
-# 
-# players %>% filter(nflId %in% att_ids) -> off_players
-# start$cov_att = off_players$displayName[start$cov]
-# start %>% select(displayName, cov_att)
-
+# Take out off-coverage players (most likely safeties that do now follow players at the LOS)
+# wenn IMMER hinter 10
+#data = data %>% filter(abs(x - absoluteYardlineNumber) < 10)
 
 # Fit model ---------------------------------------------------------------
 
+# ATTENTION HARDCODING WHICH COLUMN TO SELECT
 ## deterministic initial distribution
 n_att = 5
 
@@ -166,13 +171,13 @@ Delta = t(
   sapply(split(data, data$nflId),
          function(x){
            delta = numeric(n_att)
-           delta[which.min(abs(x$y[1] - x[1, 22 + 1:n_att]))] = 1
+           delta[which.min(abs(x$y[1] - x[1, 23 + 1:n_att]))] = 1
            delta
          })
 )
 
 dat = list(y_pos = data$y,
-           X = as.matrix(data[, 22 + 1:n_att]),
+           X = as.matrix(data[, 23 + 1:n_att]),
            ID = data$nflId,
            n_att = n_att, 
            Delta = as.matrix(Delta))
@@ -234,7 +239,7 @@ for(t in (start + 1) : nrow(probs[[def]])){
 }
 
 # which defender
-def_ids = tracking_presnap %>% 
+def_ids = data %>% 
   filter(off_def == 0) %>% 
   pull(nflId) %>% 
   unique() 
@@ -257,13 +262,9 @@ plays %>%
   View()
   select(playId)
   
-new_colnames = c("defender_Id", att_ids)
-probs <- lapply(probs, function(df) {
-    colnames(df) <- new_colnames
-    return(df)
-})
   
 # Some Ideas
 
-# only defenders in the vicinity of the los
+# only defenders in the vicinity of the los (safeties out, done)
 # only defenders that are not in the vicinity of the ball (i.e. ILB as DE raus)
+

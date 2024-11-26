@@ -11,10 +11,13 @@ plays = read.csv("plays.csv")
 # Tracking DATA Week 1 Dallas vs Tampa Bay
 # Tracking DATA Week 1 KC vs AZ
 
-tracking_kc_az = tracking_data %>% 
-  filter(gameId == 2022091110) %>% 
-  filter(playId == 291) %>% filter(frameId >= frameId[which(event == "line_set")[1]]) %>% 
-  filter(frameType == "BEFORE_SNAP")
+tracking_kc_az = tracking %>%
+  filter(gameId == 2022091110) %>%
+  filter(playId == 291) %>% filter(frameId >= frameId[which(event == "line_set")[1]]) #%>%
+  #filter(frameType == "BEFORE_SNAP") #%>% 
+  # left_join(., players %>% dplyr::select(nflId, position), by = "nflId") %>% 
+  # left_join(., plays %>% dplyr::select(playId, gameId, absoluteYardlineNumber, possessionTeam, pff_manZone), 
+  #           by = c("playId", "gameId"))
 
 # Line of Scrimmage
 los = plays %>% 
@@ -30,6 +33,12 @@ field_width <- 53.3
 team_colors = c("blue4", "black", "red")
 
 # probs are coming from the fitted model, must be taken from there
+new_colnames = c("defender_Id", att_ids)
+probs <- lapply(probs, function(df) {
+  colnames(df) <- new_colnames
+  return(df)
+})
+
 data1 = list()
 defender_data = NULL
 for (i in 1:length(probs)) {
@@ -38,7 +47,6 @@ for (i in 1:length(probs)) {
     cbind(.,probs[[i]])
   defender_data = bind_rows(defender_data, data1[[i]])
 }
-
 
 # Animation: Spielerbewegungen
 for (t in unique(tracking_kc_az$time)) {
