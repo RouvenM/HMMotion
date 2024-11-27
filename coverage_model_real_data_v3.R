@@ -10,6 +10,13 @@ library(LaMa)
 
 # With real data ----------------------------------------------------------
 
+# Version control
+# coverage_model_real_data = baseline model
+# coverage_model_real_data_v2 = 1) position ordered such that we can estimate different
+#                                  transition probs (attention when using split)
+#                               2) preprocessing prepared for a whole match 
+#                                  (not only one play)
+
 setwd("~/Sciebo/BDB 2025")
 tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
@@ -21,7 +28,7 @@ plays = read.csv("plays.csv")
 tracking = tracking_data %>% 
   filter(gameId == unique(tracking_data$gameId)[1])
 
-tracking = tracking_data %>% filter(gameId == 2022091110) %>% filter(playId == 291) 
+tracking = tracking_data %>% filter(gameId == 2022091110) #%>% filter(playId == 291) 
 
 #write.csv(tracking, file = "tracking_data_week_1_game_kcaz.csv")
 
@@ -29,37 +36,42 @@ rm(tracking_data)
 
 # Ideen: 
 
-# Sortieren der Defender nach der y-Achse (damit immer die Wahrscheinlichkeit,
-# dass Spieler, die nah beieinander sind, eher die Angreifer übergeben, höher ist)
+# Es gibt auch das Event man_in_motion, nachdem wir starten können
 
-# Es gibt auch das Event man_in_motion, nach dem
-
-# Filter out for data before the snap, i.e. the time of the motion
-# Connect with player and players df to receive information
-# Filter out the ball, offensive and defensive line and the QB
 tracking_presnap1 = tracking %>% 
   mutate(y = y - 53.3/2) %>% # center y-coordinate
-  #split(.,tracking$displayName) %>% 
-  #map(~mutate(., initial_y = y[which(event == "line_set")[1]])) %>% 
-  #bind_rows() %>% 
-  filter(frameType == "BEFORE_SNAP") %>% 
+  mutate(displayName_fac = factor(displayName, levels = unique(displayName))) %>% 
+  mutate(playId_fac = factor(playId, levels = unique(playId))) %>% 
+  group_by(displayName_fac, playId_fac) %>% #use group split to stay with the order
+  group_split() %>% 
+  map(~mutate(., initial_y = y[which(event == "line_set")[1]])) %>% 
+  bind_rows() %>% 
+  group_by(playId_fac) %>% 
+  group_split() %>% 
+  map(~filter(.,frameId >= frameId[which(event == "line_set")[1]])) %>% 
+  bind_rows() %>% 
   # Take out the time where teams are in the huddle, i.e. before first line up
+  filter(frameType == "BEFORE_SNAP") %>% # Filter out for data before the snap, i.e. the time of the motion
+  # Connect with player and players df to receive information
   left_join(., players %>% dplyr::select(nflId, position), by = "nflId") %>% 
   left_join(., plays %>% dplyr::select(playId, gameId, absoluteYardlineNumber, possessionTeam, pff_manZone), 
             by = c("playId", "gameId")) %>% 
-  mutate(off_def = ifelse(club == possessionTeam, 1, 0)) %>% 
-  filter(frameId >= frameId[which(event == "line_set")[1]])
-  
+  mutate(off_def = ifelse(club == possessionTeam, 1, 0))
+
 # Positional adjustment
+# Filter out the ball, offensive and defensive line and the QB
 tracking_presnap = tracking_presnap1 %>% 
   filter(!(position %in% c("T", "G", "C", NA, "QB", "NT", "DT", "DE")))
 
 # Offensivspieler-Daten extrahieren
-off_data <- tracking_presnap %>%
+off_players <- tracking_presnap %>%
   filter(off_def == 1) %>%
   group_by(time) %>%
   mutate(off_num = row_number()) %>% # Nummeriere Offensivspieler innerhalb jeder Sekunde
   ungroup() %>%
+  arrange(initial_y) 
+
+off_data = off_players %>% 
   select(time, off_num, y) %>% #, x) %>%
   pivot_wider(
     names_from = off_num, # Verwende die generierte Nummer als Basis für die Spalten
@@ -78,6 +90,7 @@ off_data <- tracking_presnap %>%
 
 # Defensivspieler-Daten extrahieren
 def_data <- tracking_presnap %>%
+  arrange(initial_y) %>% 
   filter(off_def == 0)
 
 # Daten zusammenführen
@@ -93,20 +106,19 @@ data <- def_data %>%
 ## deterministic initial distribution
 n_att = 5
 
-Delta = t(
-  sapply(split(data, data$nflId),
-         function(x){
-           delta = numeric(n_att)
-           delta[which.min(abs(x$y[1] - x[1, which(str_detect(names(x),"player"))[1]-1 + 1:n_att]))] = 1
-           delta
-         })
-)
+#new
+playId = data$playId
+playerId = data$nflId
 
-dat = list(y_pos = data$y,
-           X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + 1:n_att]),
-           ID = data$nflId,
-           n_att = n_att, 
-           Delta = as.matrix(Delta))
+dat = list(playId = data %>% group_by(playId) %>% group_split() %>% map(~pull(.,playId)),
+           playerId = data %>% group_by(playId) %>% group_split() %>% map(~pull(.,nflId)),
+           y_pos = data %>% group_by(playId) %>% group_split() %>% map(~pull(.,y)),
+           X = data.frame(playId = data$playId, 
+                            X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + 1:n_att])) %>% 
+             group_by(playId) %>% group_split() %>% map(~select(.,-c(playId))),
+           n_att = n_att,
+           Deltas = lapply(data %>% group_by(playId) %>% group_split(), function(x) Delta_fun(x))
+)
 
 par = list(eta = rep(-4, n_att * (n_att - 1)),
            logsigma = log(1),
@@ -122,28 +134,33 @@ nll = function(par){
   
   # assuming y variable is centered -> pulling to the middle
   # alpha * X + (1-alpha) * y_middle
-  Mu = alpha * X
+  loglik = rep(NA, length(Deltas))
+  for (i in 1:length(Deltas)) {
+  Mu = alpha * X[[i]]
   REPORT(Mu)
   REPORT(alpha)
   
-  allprobs = matrix(1, length(y_pos), n_att)
-  ind = which(!is.na(y_pos))
+  allprobs = matrix(1, length(y_pos[[i]]), n_att)
+  ind = which(!is.na(y_pos[[i]]))
   for(j in 1:n_att){
-    allprobs[ind,j] = dnorm(y_pos, Mu[,j], sigma)
+    allprobs[ind,j] = dnorm(y_pos[[i]], Mu[,j], sigma)
   }
   
-  -forward(Delta, Gamma, allprobs, trackID = ID)
+  loglik[i] = -forward(Deltas[[i]], Gamma, allprobs, trackID = playerId[[i]])
+  
+  }
+  return(sum(loglik))
 }
 
 # all off-diagonal probablities are the same
-map = list(eta = factor(rep(1, n_att * (n_att - 1))))
+#map = list(eta = factor(rep(1, n_att * (n_att - 1))))
 
-obj = MakeADFun(nll, par, map = map)
+obj = MakeADFun(nll, par)#, map = map)
 opt = nlminb(obj$par, obj$fn, obj$gr)
 
 mod = obj$report()
 (Delta = mod$delta)
-Gamma = mod$Gamma
+(Gamma = mod$Gamma)
 allprobs = mod$allprobs
 trackID = mod$trackID
 (alpha = mod$alpha)
@@ -152,10 +169,26 @@ probs = stateprobs(mod = mod)
 colnames(probs) = paste0("attacker_", 1:n_att)
 probs = cbind(ID = trackID, probs)
 
-probs = split(as.data.frame(probs), probs[,1])
+probs = (split(as.data.frame(probs), probs[,1]))[as.character(unique(probs[,1]))]
 probs = lapply(probs, as.matrix)
 
-def = 8
+# which defender
+def_ids = def_data %>% 
+  pull(nflId) %>% 
+  unique() 
+
+(players %>% filter(nflId %in% def_ids))[match(def_ids, players %>% 
+                                                 filter(nflId %in% def_ids) %>% pull(nflId)), ]
+
+# which offenders
+(att_ids = off_players %>% 
+    pull(nflId) %>% 
+    unique()) 
+
+(players %>% filter(nflId %in% att_ids))[match(att_ids, players %>% 
+                                                 filter(nflId %in% att_ids) %>% pull(nflId)), ]
+
+def = 1
 probs[[def]][1,1]
 start = 1
 plot(probs[[def]][start,-1], type = "h", ylim = c(0,1))
@@ -164,21 +197,6 @@ for(t in (start + 1) : nrow(probs[[def]])){
   Sys.sleep(0.1)
 }
 
-# which defender
-def_ids = data %>% 
-  filter(off_def == 0) %>% 
-  pull(nflId) %>% 
-  unique() 
-
-players %>% filter(nflId %in% def_ids)
-
-# which offenders
-(att_ids = tracking_presnap %>% 
-  filter(off_def == 1) %>% 
-  pull(nflId) %>% 
-  unique()) 
-
-players %>% filter(nflId %in% att_ids)
 
 plays %>% 
   filter(gameId == tracking$gameId[2]) %>% 
@@ -186,9 +204,9 @@ plays %>%
   arrange(desc(gameClockNum)) %>% 
   filter(pff_manZone == "Man") %>%
   View()
-  select(playId)
-  
-  
+select(playId)
+
+
 # Some Ideas
 
 # only defenders in the vicinity of the los (safeties out, done)
