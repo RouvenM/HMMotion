@@ -14,6 +14,7 @@ setwd("~/Sciebo/BDB 2025")
 tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
 plays = read.csv("plays.csv")
+players_play = read.csv("player_play.csv")
 
 # Spiel 2022091110, playId 291 als Beispiel benutzen
 # Marco Wilson geht mit Mecole Hardman die ganze Zeit in Man Coverage mit
