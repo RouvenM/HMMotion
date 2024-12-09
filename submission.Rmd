@@ -12,9 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Choosing between man- and zone coverage is one of the most important strategic decisions a defensive coordinator has to take before each offensive play in American football. While experienced coaches and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer the tactics by the defence.
-This project aims to leverage hidden Markov models (HMMs) to detect defensive strategies --- man or zone coverage --- based on pre-snap player movement data. 
-By modeling hidden states that represent the offensive player being guarded, this approach builds on previous attempts to predict zone- or man coverage (see screenshot below from the Pittsburgh Steelers vs. Cleveland Browns match), which focused primarily on specific plays without motion. In contrast, we are now able to include player movement and exploit the additional information available. In this way, we provide a data-driven framework for unravelling the complexity of defensive patterns, enabling real-time tactical insights for coaching and analysis.
+Choosing between man- and zone coverage is one of the most important strategic decisions a defensive coordinator has to take before each offensive play in American football. While experienced offensive coordinators and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer these defensive tactics. Previous approaches attempted to predict zone- or man coverage. One example can be seen in the below screenshot: here, display the Amazon Prime broadcast of the week 11 match between the Pittsburgh Steelers and Cleveland Browns of the current season includes the man- or zone prediction of Amazon's NFL Next Gen Stats model. Although the full model and its specifies is not public, the live broadcast prediction mostly focus on specific plays without any pre-snap motion. In contrast, in this project, we include player movements after the line has been set, i.e. pre-snap motion, and exploit this additional information using hidden Markov models (HMMs). By modeling hidden states that represent the offensive player being guarded, we can infer the probabilities of state switches (i.e. whether defenders trail with offensive players or pass the responsibility on to their teammates). Implementing this information into an pre-motion detection model (such as the model by Amazon), we can show that the detection accuracy of the correct defensive strategy --- man or zone coverage --- is heavily increased. In this way, we provide a data-driven framework for assessing the efficiency of pre-snap motion, but also unravelling the complexity of defensive patterns, enabling real-time tactical insights for coaches.
 
 <center>
   <img src="prime_coverage_prediction.jpg" width="600" height="400" alt="Coverage Prediction">
@@ -73,6 +71,8 @@ Hier die Animation rein mit den Verbindungen von den decodierten States
 
 ## Discussion
 
+
+A drawback in our approach is that we have seen that the prediction accuracy of the pre-motion model is not perfect, among other things, due to insufficient hyperparameter tuning. However, this project focus' was on the pre-snap motion and the appropriate translation of this information into a statistical framework, here, the hidden Markov model framework. Thus, our pre-motion model can easily be replaced by another model (such as by the NFL Next Gen Stats model) which in turn can be interconnected with our modeling extension, and, thus, exploiting the information of player movements.
 
 
 
