@@ -14,14 +14,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Choosing between man- and zone coverage is one of the most important strategic decisions a defensive coordinator has to take before each offensive play in American football. While experienced coaches and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer the tactics by the defence.
 This project aims to leverage hidden Markov models (HMMs) to detect defensive strategies --- man or zone coverage --- based on pre-snap player movement data. 
-By modeling hidden states that proxy the offensive player to be guarded, this approach provides a data-driven framework for unraveling the complexity of defensive patterns and enables real-time tactical insights for coaching and analysis.
-
-The following video displays a touchdown from the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) is in motion. He is immediately followed by the defender Marco Wilson (AZ #20), which is a clear indication for man-coverage. 
+By modeling hidden states that represent the offensive player being guarded, this approach builds on previous attempts to predict zone- or man coverage (see screenshot below from the Pittsburgh Steelers vs. Cleveland Browns match), which focused primarily on specific plays without motion. In contrast, we are now able to include player movement and exploit the additional information available. In this way, we provide a data-driven framework for unravelling the complexity of defensive patterns, enabling real-time tactical insights for coaching and analysis.
 
 <center>
-<video width="600" height="400" controls>
-  <source src="kc_az_td.mp4" type="video/mp4">
-</video>
+  <img src="prime_coverage_prediction.jpg" width="600" height="400" alt="Coverage Prediction">
 </center>
 
 ## Data
@@ -46,6 +42,14 @@ The model uses the previously described features, blablabla.
 
 #### 2. HMM analysis
 We model the movements of defensive players during the phase of pre-snap motion within a hidden Markov framework, in which the underlying states represent the offensive players to be guarded (see Franks et al. 2015 for a similar approach in basketball). In contrast to Groom et al. (2024), who enforce a state to proxy zone coverage during corner kicks in soccer, we cannot proceed similarly as the classical coverage zones in American football will only be covered by the defenders post-snap. 
+
+The following video displays a touchdown from the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) is in motion. He is immediately followed by the defender Marco Wilson (AZ #20), which is a clear indication for man-coverage. 
+
+<center>
+<video width="600" height="400" controls>
+  <source src="kc_az_td.mp4" type="video/mp4">
+</video>
+</center>
 
 \textbf{den folgenden Teil könnte man auch in den Appendix packen}
 
