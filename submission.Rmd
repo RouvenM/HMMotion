@@ -12,14 +12,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Choosing between man- and zone coverage is one of the most important strategic decisions a defensive coordinator has to take before each offensive play in American football. While experienced offensive coordinators and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer these defensive tactics. Previous approaches attempted to predict zone- or man coverage. One example can be seen in the below screenshot: here, display the Amazon Prime broadcast of the week 11 match between the Pittsburgh Steelers and Cleveland Browns of the current season includes the man- or zone prediction of Amazon's NFL Next Gen Stats model. Although the full model and its specifies is not public, the live broadcast prediction mostly focus on specific plays without any pre-snap motion. In contrast, in this project, we include player movements after the line has been set, i.e. pre-snap motion, and exploit this additional information using hidden Markov models (HMMs). By modeling hidden states that represent the offensive player being guarded, we can infer the probabilities of state switches (i.e. whether defenders trail with offensive players or pass the responsibility on to their teammates). Implementing this information into an pre-motion detection model (such as the model by Amazon), we can show that the detection accuracy of the correct defensive strategy --- man or zone coverage --- is heavily increased. In this way, we provide a data-driven framework for assessing the efficiency of pre-snap motion, but also unravelling the complexity of defensive patterns, enabling real-time tactical insights for coaches.
+Choosing between man- and zone coverage is one of the most important strategic decisions a defensive coordinator has to take before each offensive play in American football. While experienced offensive coordinators and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer these defensive tactics. Previous approaches attempted to predict zone- or man coverage. One example can be seen in the below screenshot which displays a snapshot from the Amazon Prime broadcast of the week 12 match between the Pittsburgh Steelers and Cleveland Browns of the current NFL season, including a prediction by Amazon's NFL Next Gen Stats model whether man- or zone coverage will be played. Although the full model and its details are not public, the live broadcast prediction mostly focuses on specific plays without any pre-snap motion. In contrast, in this project, we include player movements before the snap, i.e. pre-snap motion, and exploit this additional information using hidden Markov models (HMMs). By modeling hidden states that represent the offensive player being guarded, we infer the probabilities of state persistence, i.e. a defensive player is trailing with the offensive opponent, and, thus, also state switches, i.e. an offensive players' coverage is passed on to another teammate. Implementing this information into an pre-motion detection model (similar to the one from Amazon), we can show that the detection accuracy of the correct defensive strategy --- man- or zone coverage --- is heavily increased. In this way, we provide a data-driven framework for assessing the efficiency of pre-snap motion to unveal the defensive tactic, but also unravel the complexity of defensive patterns, enabling real-time tactical insights for coaches.
 
 <center>
   <img src="prime_coverage_prediction.jpg" width="600" height="400" alt="Coverage Prediction">
 </center>
 
 ## Data
-Analyzing tracking data from nine weeks of the NFL 2022 season, we aim to forecast the defensive scheme (man- or zone defense). For this, we use the corresponding data from PFF that analysed every play and assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. Then, we end up with XY plays in total, from which the defense played Y in zone and X in man coverage.
+We analyze tracking data from nine weeks of the NFL 2022 season, provided by the NFL Big Data Bowl 2024. Beside the tracking data, we also use the delivered play and player information and the corresponding data from PFF that analysed every play and assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. Then, we end up with XY offensive plays in total, from which the defense played Y in zone and X in man coverage. 
 
 Within these plays, we concentrate on the tracking data after the line has been set (because we are not interested in how players come out of the huddle) and before the ball has been snapped by the Center. For the HMM analysis, we further concentrate on those plays with pre-snap motion (ZZ plays). 
 
@@ -33,7 +33,7 @@ More details regarding data pre-processing can be found in the Appendix.}
 
 Our analysis comprises different steps:
 
-#### 1. Pre-motion analysis
+#### 1. Pre-motion prediction
 We train a model to predict whether the defense plays a man- or zone coverage scheme. In particular, .....
 
 The model uses the previously described features, blablabla. 
@@ -59,11 +59,11 @@ In general, $f$ can be any density or probability mass function depending on the
 
 To remediate this, we derive the decision of man- or zone coverage from the number of switches for individual players. In particular, a low number of switches when offensive players are in motion indicates man coverage whereas a higher number indicates zone coverage.
 
-#### 3. Post-motion analysis
-We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate results from the HMM analysis as further covariates.
+#### 3. Post-motion prediction
+We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate results from the HMM analysis as further covariates. In particular, we include the state-switching probabilities....
 
 #### 4. Motion evaluation
-By comparing the predictive performance of our pre-motion model and our post-motion model we can determine the effectiveness of motion to detect the correct defensive scheme. Moreover, we can assess which teams predominantly apply pre-snap motions to increase the likelihood of correctly identifying the applied defensive strategy.
+By comparing the predictive performance of our model without motion and our post-motion model we can determine the effectiveness of player movements before the snap to detect the correct defensive scheme. Moreover, we assess which teams predominantly apply pre-snap motions to increase the likelihood of correctly identifying the applied defensive strategy.
 
 ## Results
 
