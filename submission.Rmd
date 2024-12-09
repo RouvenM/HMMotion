@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Choosing between man- and zone coverage is one of the most important strategic decisions a defensive coordinator has to take prior to each play in American football. While experienced coaches and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer the underlying tactic.
+Choosing between man- and zone coverage is one of the most important strategic decisions a defensive coordinator has to take before each offensive play in American football. While experienced coaches and quarterbacks can often identify these defensive strategies visually, the growing availability of tracking data presents another opportunity to infer the tactics by the defence.
 This project aims to leverage hidden Markov models (HMMs) to detect defensive strategies --- man or zone coverage --- based on pre-snap player movement data. 
 By modeling hidden states that proxy the offensive player to be guarded, this approach provides a data-driven framework for unraveling the complexity of defensive patterns and enables real-time tactical insights for coaching and analysis.
 
@@ -33,18 +33,19 @@ Within these plays, we concentrate on the tracking data after the line has been 
 To accurately forecast the defensive scheme (man- or zone defense) for every play, we need to create various features derived from the tracking data. In particular, we conducted the following feature engineering steps:
 
 \textbf{UMSCHREIBEN} \textit{For all players and the ball carrier we use the features already contained in the tracking data, namely x- and y-coordinates, speed, acceleration, distance covered, orientation and direction. Except for the ball carrier we further compute the euclidean distance, x-distance and y-distance to the ball carrier. For defensive players only, we additionally compute the absolute difference of the defender’s direction and the angle of the shortest segment between the defender and the ball carrier. Subsequently, we order all players (in each frame) with respect to their euclidean distance to the ball carrier and standardize all features.
-More details regarding data preprocessing can be found in the Appendix.}
+More details regarding data pre-processing can be found in the Appendix.}
 
 ## Analysis 
 
 Our analysis comprises different steps:
 
 #### 1. Pre-motion analysis
-We train a model to predict whether the defense plays a man- or zone coverage scheme. The 
-model uses the previously described features, blablabla. 
+We train a model to predict whether the defense plays a man- or zone coverage scheme. In particular, .....
+
+The model uses the previously described features, blablabla. 
 
 #### 2. HMM analysis
-We model the movements of defensive players during the phase of pre-snap motion within a hidden Markov framework, in which the underlying states represent the offensive players to be guarded (see Franks et al., 2015 for a similar approach in basketball). In contrast to Groom et al., 2024, who enforce a state to proxy zone coverage during corner kicks in soccer, we cannot proceed similarly as the classical coverage zones in American football will only be covered by the defenders post-snap. 
+We model the movements of defensive players during the phase of pre-snap motion within a hidden Markov framework, in which the underlying states represent the offensive players to be guarded (see Franks et al. 2015 for a similar approach in basketball). In contrast to Groom et al. (2024), who enforce a state to proxy zone coverage during corner kicks in soccer, we cannot proceed similarly as the classical coverage zones in American football will only be covered by the defenders post-snap. 
 
 \textbf{den folgenden Teil könnte man auch in den Appendix packen}
 
@@ -52,15 +53,15 @@ A hidden Markov models consists of an observed time series $\{\boldsymbol{y}_t\}
 \begin{equation*}
 f(\boldsymbol{y}_t|g_1, \ldots, g_T, \boldsymbol{y}_1, \ldots, \boldsymbol{y}_{t-1},\boldsymbol{y}_{t+1},\ldots,\boldsymbol{y}_T) = f(\boldsymbol{y}_t|g_t).
 \end{equation*}
-In general, $f$ can be any density or probability mass function depending on the type of data. We are following the approaches of Franks et al. (2015) and Groom (2024) and opt for the Normal distribution.
+In general, $f$ can be any density or probability mass function depending on the type of data. Following the approaches of Franks et al. (2015) and Groom (2024), we opt for a Gaussian distribution.
 
 To remediate this, we derive the decision of man- or zone coverage from the number of switches for individual players. In particular, a low number of switches when offensive players are in motion indicates man coverage whereas a higher number indicates zone coverage.
 
 #### 3. Post-motion analysis
-We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate the results from the HMM analysis.
+We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate results from the HMM analysis as further covariates.
 
 #### 4. Motion evaluation
-By comparing the predictive performance of our pre-motion model and our post-motion model we can determine the effectiveness of motion to detect the correct defensive scheme.
+By comparing the predictive performance of our pre-motion model and our post-motion model we can determine the effectiveness of motion to detect the correct defensive scheme. Moreover, we can assess which teams predominantly apply pre-snap motions to increase the likelihood of correctly identifying the applied defensive strategy.
 
 ## Results
 
@@ -69,9 +70,11 @@ Hier die Animation rein mit den Verbindungen von den decodierten States
 ## Discussion
 
 
+
+
 ## Code
 
-All code for data preprocessing, model training, prediction and player evaluation can be found [here](https://github.com/janoleko/BDB-2025/).
+All code for data pre-processing, model training, prediction and player evaluation can be found [here](https://github.com/janoleko/BDB-2025/).
 
 ## References
 *Franks A, Miller A, Bornn L, Goldsberry K (2015). Characterizing the Spatial Structure of Defensive Skill in Professional Basketball. The Annals of Applied Statistics, 9(1), DOI:10.1214/14-AOAS799

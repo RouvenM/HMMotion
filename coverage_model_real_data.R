@@ -10,7 +10,7 @@ library(LaMa)
 
 # With real data ----------------------------------------------------------
 
-setwd("~/Sciebo/BDB 2025")
+setwd("C:/Users/michels/sciebo/BDB 2025")
 tracking_data = read.csv("tracking_week_1.csv")
 players = read.csv("players.csv")
 plays = read.csv("plays.csv")
@@ -103,6 +103,45 @@ Delta = t(
          })
 )
 
+rnames_old = rownames(Delta)
+# only defenders that are close to offensive players
+Delta2 = t(
+  sapply(split(data, data$nflId),
+         function(x){
+           delta = numeric(n_att)
+           delta[which.min(abs(x$y[1] - x[1, which(str_detect(names(x),"player"))[1]-1 + 1:n_att]))] = min(abs(x$y[1] - x[1, which(str_detect(names(x),"player"))[1]-1 + 1:n_att]))
+           delta
+         })
+)
+
+# Funktion zum Anwenden der Regel pro Zeile
+process_row <- function(row) {
+  non_zero_indices <- which(row > 0)
+  if (length(non_zero_indices) == 1) {
+    result <- rep(0, length(row))
+    result[non_zero_indices] <- row[non_zero_indices]
+  } else if (length(non_zero_indices) > 1) {
+    result <- rep(0, length(row))
+    smallest_index <- non_zero_indices[which.min(row[non_zero_indices])]
+    result[smallest_index] <- row[smallest_index]
+  } else {
+    result <- row
+  }
+  return(result)
+}
+
+# Anwenden auf den gesamten Data Frame
+processed_df <- as.data.frame((apply(Delta2, 2, process_row)))
+
+# Spaltennamen beibehalten
+colnames(processed_df) <- colnames(Delta2)
+row.names(processed_df) = rnames_old
+
+Delta = processed_df[which(rowSums(processed_df)>0),]
+rnames_new = rownames(Delta)
+
+data = data %>% filter(nflId %in% rnames_new)
+
 dat = list(y_pos = data$y,
            X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + 1:n_att]),
            ID = data$nflId,
@@ -156,7 +195,7 @@ probs = cbind(ID = trackID, probs)
 probs = split(as.data.frame(probs), probs[,1])
 probs = lapply(probs, as.matrix)
 
-def = 8
+def = 5
 probs[[def]][1,1]
 start = 1
 plot(probs[[def]][start,-1], type = "h", ylim = c(0,1))
