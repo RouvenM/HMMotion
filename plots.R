@@ -97,7 +97,7 @@ for (t in unique(tracking_kc_az$time)) {
 
 
 # Feste Farbskala (von hellgrau zu schwarz)
-color_palette <- colorRampPalette(c("lightgray", "black"))
+color_palette <- colorRampPalette(c("white", "black"))
 
 # Anzahl an Farbstufen definieren (z. B. 100)
 n_colors <- 100
@@ -116,10 +116,6 @@ for (t in unique(tracking_kc_az$time)) {
   )
   grid() # Raster für das Spielfeld
   
-  # Spielerpositionen hinzufügen
-  points(current_data$x, current_data$y, pch = 19, 
-         col = team_colors[as.factor(current_data$club)], cex = 2)
-  abline(v = los)
   #text(current_data$x, current_data$y, labels = current_data$nflId, pos = 3, col = "black")
   
   # Verbindungslinien basierend auf Wahrscheinlichkeiten hinzufügen
@@ -148,6 +144,11 @@ for (t in unique(tracking_kc_az$time)) {
         )
       #}      
     }
+    
+    # Spielerpositionen hinzufügen
+    points(current_data$x, current_data$y, pch = 19, 
+           col = team_colors[as.factor(current_data$club)], cex = 2)
+    abline(v = los)
 
   }
   

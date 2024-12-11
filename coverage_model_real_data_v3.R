@@ -44,13 +44,13 @@ tracking_presnap1 = tracking %>%
   mutate(playId_fac = factor(playId, levels = unique(playId))) %>% 
   group_by(displayName_fac, playId_fac) %>% #use group split to stay with the order
   group_split() %>% 
+  # Take out the time where teams are in the huddle, i.e. before first line up
   map(~mutate(., initial_y = y[which(event == "line_set")[1]])) %>% 
   bind_rows() %>% 
   group_by(playId_fac) %>% 
   group_split() %>% 
   map(~filter(.,frameId >= frameId[which(event == "line_set")[1]])) %>% 
   bind_rows() %>% 
-  # Take out the time where teams are in the huddle, i.e. before first line up
   filter(frameType == "BEFORE_SNAP") %>% # Filter out for data before the snap, i.e. the time of the motion
   # Connect with player and players df to receive information
   left_join(., players %>% dplyr::select(nflId, position), by = "nflId") %>% 
@@ -106,6 +106,18 @@ data <- def_data %>%
 ## deterministic initial distribution
 n_att = 5
 
+Delta_fun = function(data){
+  
+  t(
+  sapply((split(data, data$nflId))[as.character(unique(data$nflId))],
+         function(x){
+           delta = numeric(n_att)
+           delta[which.min(abs(x$y[1] - x[1, which(str_detect(names(x),"player"))[1]-1 + 1:n_att]))] = 1
+           delta
+         })
+)
+}
+
 #new
 playId = data$playId
 playerId = data$nflId
@@ -115,7 +127,7 @@ dat = list(playId = data %>% group_by(playId) %>% group_split() %>% map(~pull(.,
            y_pos = data %>% group_by(playId) %>% group_split() %>% map(~pull(.,y)),
            X = data.frame(playId = data$playId, 
                             X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + 1:n_att])) %>% 
-             group_by(playId) %>% group_split() %>% map(~select(.,-c(playId))),
+             group_by(playId) %>% group_split() %>% map(~select(.,-c(playId))) %>% lapply(as.matrix),
            n_att = n_att,
            Deltas = lapply(data %>% group_by(playId) %>% group_split(), function(x) Delta_fun(x))
 )
@@ -136,7 +148,8 @@ nll = function(par){
   # alpha * X + (1-alpha) * y_middle
   loglik = rep(NA, length(Deltas))
   for (i in 1:length(Deltas)) {
-  Mu = alpha * X[[i]]
+  Mu = #alpha * 
+    X[[i]]
   REPORT(Mu)
   REPORT(alpha)
   
