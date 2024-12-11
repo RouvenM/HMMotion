@@ -25,8 +25,8 @@ plays = read.csv("plays.csv")
 # Spiel 2022091110, playId 291 als Beispiel benutzen
 # Marco Wilson geht mit Mecole Hardman die ganze Zeit in Man Coverage mit
 
-tracking = tracking_data %>% 
-  filter(gameId %in% unique(tracking_data$gameId)[1:2]) 
+tracking = tracking_data #%>% 
+#filter(gameId %in% unique(tracking_data$gameId)[1:2]) 
 
 tracking = tracking %>% filter(playId %in% unique(tracking$playId)[1:2])
 #tracking = tracking_data %>% filter(gameId == 2022091110) #%>% filter(playId == 291) 
@@ -104,7 +104,7 @@ off_players <- tracking_presnap %>%
   mutate(off_num = row_number()) %>% # Nummeriere Offensivspieler innerhalb jeder Sekunde
   # arrange(initial_y) %>% 
   ungroup()
-  
+
 off_data = off_players %>% 
   select(gameId, playId, time, off_num, y) %>% #, x) %>%
   pivot_wider(
@@ -315,7 +315,7 @@ def_ids = def_data %>%
                                                  filter(nflId %in% att_ids) %>% pull(nflId)), ]
 
 def = 999
-def = "202209120044654618"
+def = "20220911136547877"
 start = 1
 plot(as.numeric(probs[[def]][start,-1]), type = "h", ylim = c(0,1))
 for(t in (start + 1) : nrow(probs[[def]])){
@@ -323,7 +323,59 @@ for(t in (start + 1) : nrow(probs[[def]])){
   Sys.sleep(0.1)
 }
 
-#Start Delta Reihenfolge passt noch nicht
+
+analyze_data <- function(df) {
+  # Spalten 2 bis 6 in numerische Werte umwandeln
+  numeric_values <- apply(df[, 2:6], 2, function(col) as.numeric(as.character(col)))
+  
+  # Fehlende Werte (NA) behandeln, falls Umwandlung fehlschlägt
+  if (anyNA(numeric_values)) {
+    warning("Es gibt NA-Werte nach der Umwandlung. Bitte prüfen!")
+  }
+  
+  # Den größten Wert pro Zeile bestimmen
+  max_values <- apply(numeric_values, 1, which.max)
+  
+  # Anzahl der Änderungen des größten Wertes berechnen
+  changes <- sum(c(NA, diff(max_values)) != 0, na.rm = TRUE)
+  
+  # Ergebnis als Liste zurückgeben
+  #list(max_values = max_values, num_changes = changes)
+  
+  data.frame(#max_columns = paste(max_column_names, collapse = ", "),
+             num_changes = changes)
+}
+
+#results <- lapply(probs, analyze_data)
+results_df <- do.call(rbind, lapply(probs, analyze_data))
+#results_df$uniId2 = str_sub(rownames(results_df), 1, str_length(rownames(results_df))-5)
+results_df$gameId = str_sub(rownames(results_df), 1, 10)#str_length(rownames(results_df))-5)
+results_df$playId = str_sub(rownames(results_df), 11, str_length(rownames(results_df))-5)
+
+res_df = results_df %>% group_by(gameId, playId) %>% summarize(average = mean(num_changes),
+                                                               sum = sum(num_changes))
+res_df = merge(plays, res_df, by = c("gameId", "playId"))
+
+# Laden der ggplot2-Bibliothek
+library(ggplot2)
+
+# Häufigkeit der Kategorien nach Gruppe visualisieren
+ggplot(res_df %>% filter(pff_manZone != "Other"), aes(x = average, fill = pff_manZone)) +
+  geom_bar(position = "dodge", aes(y = ..prop.., group = pff_manZone)) + # prop.. berechnet die relative Häufigkeit
+  labs(title = "Relative Häufigkeit der Kategorien nach Gruppe", 
+       x = "Kategorie", 
+       y = "Relative Häufigkeit") +
+  scale_y_continuous(labels = scales::percent) + # Prozentformat auf der y-Achse
+  theme_minimal()
+
+ggplot(res_df %>% filter(pff_manZone != "Other"), aes(x = sum, fill = pff_manZone)) +
+  geom_bar(position = "dodge", aes(y = ..prop.., group = pff_manZone)) + # prop.. berechnet die relative Häufigkeit
+  labs(title = "Relative Häufigkeit der Kategorien nach Gruppe", 
+       x = "Kategorie", 
+       y = "Relative Häufigkeit") +
+  scale_y_continuous(labels = scales::percent) + # Prozentformat auf der y-Achse
+  theme_minimal()
+
 
 plays %>% 
   filter(gameId == tracking$gameId[2]) %>% 
