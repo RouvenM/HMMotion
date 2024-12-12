@@ -19,16 +19,19 @@ library(LaMa)
 
 setwd("C:/Users/michels/sciebo/BDB 2025")
 tracking_data = read.csv("tracking_week_1.csv")
+tracking_data = bind_rows(tracking_data, read.csv("tracking_week_2.csv"))
+tracking_data = bind_rows(tracking_data, read.csv("tracking_week_3.csv"))
+tracking_data = bind_rows(tracking_data, read.csv("tracking_week_4.csv"))
 players = read.csv("players.csv")
 plays = read.csv("plays.csv")
 
 # Spiel 2022091110, playId 291 als Beispiel benutzen
 # Marco Wilson geht mit Mecole Hardman die ganze Zeit in Man Coverage mit
 
-tracking = tracking_data #%>% 
+#tracking = tracking_data #%>% 
 #filter(gameId %in% unique(tracking_data$gameId)[1:2]) 
 
-tracking = tracking %>% filter(playId %in% unique(tracking$playId)[1:2])
+#tracking = tracking %>% filter(playId %in% unique(tracking$playId)[1:2])
 #tracking = tracking_data %>% filter(gameId == 2022091110) #%>% filter(playId == 291) 
 
 tracking_data$uniId2 = paste0(tracking_data$gameId, tracking_data$playId)
@@ -391,7 +394,7 @@ plays %>%
   View()
 select(playId)
 
-save(probs, file = "probs.RData")
+save(probs, file = "probs_4weeks.RData")
 
 # Some Ideas
 
