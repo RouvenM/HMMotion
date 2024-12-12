@@ -31,6 +31,11 @@ tracking = tracking_data #%>%
 tracking = tracking %>% filter(playId %in% unique(tracking$playId)[1:2])
 #tracking = tracking_data %>% filter(gameId == 2022091110) #%>% filter(playId == 291) 
 
+tracking_data$uniId2 = paste0(tracking_data$gameId, tracking_data$playId)
+
+unid2_motion = tracking_data %>% filter(event == "man_in_motion") %>% pull(uniId2)
+
+tracking = tracking_data %>% filter(uniId2 %in% unid2_motion)
 #write.csv(tracking, file = "tracking_data_week_1_game_kcaz.csv")
 
 #rm(tracking_data)
@@ -69,12 +74,13 @@ tracking_presnap1 = tracking %>%
 position_counts <- tracking_presnap1 %>%
   group_by(uniId2, position) %>%
   summarise(Count = n(), .groups = "drop") %>%
-  filter(position %in% c("T", "G")) %>%
+  filter(position %in% c("T", "G", "QB", "C")) %>%
   pivot_wider(names_from = position, values_from = Count, values_fill = 0)
 
 # 2. Filtere PlayIds mit gleichen Häufigkeiten von T und G
 valid_play_ids <- position_counts %>%
   filter(T == G) %>%
+  filter(QB == C) %>% 
   pull(uniId2)
 
 valid_play_ids2 = tracking_presnap1 %>% group_by(uniId2) %>% 
@@ -385,6 +391,7 @@ plays %>%
   View()
 select(playId)
 
+save(probs, file = "probs.RData")
 
 # Some Ideas
 
