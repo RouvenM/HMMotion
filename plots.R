@@ -19,6 +19,14 @@ tracking_kc_az = tracking %>%
   # left_join(., plays %>% dplyr::select(playId, gameId, absoluteYardlineNumber, possessionTeam, pff_manZone), 
   #           by = c("playId", "gameId"))
 
+
+#20220911 031700
+#data %>% filter(uniId == "2022091103170046097")
+tracking_kc_az = tracking_data %>% filter(gameId == 2022091103, playId == 1700)%>% filter(frameId >= frameId[which(event == "line_set")[1]])
+los = plays %>% 
+  filter(gameId == 2022091103) %>% 
+  filter(playId == 1700) %>% pull(absoluteYardlineNumber)
+
 # Line of Scrimmage
 los = plays %>% 
   filter(gameId == 2022091110) %>% 
