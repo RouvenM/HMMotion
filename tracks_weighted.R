@@ -140,6 +140,8 @@ pre_process <- function(tracking_data){
 n_att = 5
 
 setwd("C:/Users/michels/sciebo/BDB 2025")
+players = read.csv("players.csv")
+plays = read.csv("plays.csv")
 tracking_data = pre_process(read.csv("tracking_week_1.csv"))
 tracking_data = bind_rows(tracking_data, pre_process(read.csv("tracking_week_2.csv")))
 tracking_data = bind_rows(tracking_data, pre_process(read.csv("tracking_week_3.csv")))
@@ -151,8 +153,6 @@ tracking_data = bind_rows(tracking_data, pre_process(read.csv("tracking_week_8.c
 tracking_data = bind_rows(tracking_data, pre_process(read.csv("tracking_week_9.csv")))
 
 data = tracking_data
-players = read.csv("players.csv")
-plays = read.csv("plays.csv")
 
 # Spiel 2022091110, playId 291 als Beispiel benutzen
 # Marco Wilson geht mit Mecole Hardman die ganze Zeit in Man Coverage mit
@@ -184,7 +184,7 @@ rm(def_data, off_data, off_players, position_counts, position_counts2, tracking_
 #data = data %>% filter(abs(x - absoluteYardlineNumber) < 10)
 
 # Fit model ---------------------------------------------------------------
-data = data %>% filter(gameId == 2022091110) %>% filter(playId == 291) #filter(uniId2 == "202209110057")# | uniId2 == "202209120064")
+#data = data %>% filter(gameId == 2022091110) %>% filter(playId == 291) #filter(uniId2 == "202209110057")# | uniId2 == "202209120064")
 
 ## deterministic initial distribution
 
@@ -421,7 +421,7 @@ rnames_new = rownames(Delta3)
 
 data = data %>% filter(uniId %in% rnames_new)
 
-write.csv(data, file = "data_4_weeks_for_HMM.csv")
+write.csv(data, file = "data_all_weeks_for_HMM.csv")
 #Deltas = Deltas[which(rownames(Deltas) %in% rnames_new),]
 
 dat = list(y_pos = data$y,
@@ -567,7 +567,7 @@ ggplot(res_df %>% filter(pff_manZone != "Other"), aes(x = average_sd, fill = pff
   scale_y_continuous(labels = scales::percent) + # Prozentformat auf der y-Achse
   theme_minimal()
 
-#save(probs, file = "probs_4weeks.RData")
+save(probs, file = "probs_8weeks.RData")
 
 res_df$day = str_sub(res_df$gameId, 1, 8)
 days = unique(res_df$day)
