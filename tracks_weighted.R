@@ -267,8 +267,8 @@ Delta2 <- t(
              x_off <- x[1,i]
              
              # Gewichtete Distanzberechnung
-             wy <- 4  # Gewicht für die y-Distanz
-             wx <- 0.5  # Gewicht für die x-Distanz
+             wy <- 0.95  # Gewicht für die y-Distanz
+             wx <- 0.05  # Gewicht für die x-Distanz
              sqrt(wy * (y_off - y_def)^2 + wx * (x_off - x_def)^2)
            }) %>% unlist()
            
@@ -416,19 +416,20 @@ Delta3 = bind_rows(Delta3)
 
 rnames_new = rownames(Delta3)
 
+Delta4 = as.data.frame(matrix(0.2, nrow = length(unique(data$uniId)), ncol = n_att))
 #Delta4 = Delta4 %>% select(-rnames)
 #Delta4[Delta4 > 0] = 1
 
 data = data %>% filter(uniId %in% rnames_new)
 
-write.csv(data, file = "data_all_weeks_for_HMM.csv")
+#write.csv(data, file = "data_all_weeks_for_HMM.csv")
 #Deltas = Deltas[which(rownames(Deltas) %in% rnames_new),]
 
 dat = list(y_pos = data$y,
            X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + n_att + 1:n_att]),
            ID = data$uniId,
            n_att = n_att, 
-           Delta = as.matrix(Delta3))
+           Delta = as.matrix(Deltas))
 
 par = list(eta = rep(-4, n_att * (n_att - 1)),
            logsigma = log(1),
@@ -502,6 +503,12 @@ for(t in (start + 1) : nrow(probs[[def]])){
   Sys.sleep(0.1)
 }
 
+# Funktion zur Berechnung der Entropie
+calculate_entropy <- function(Z) {
+  Z <- Z[Z > 0]  # Entferne 0-Werte
+  entropy <- -sum(Z * log(Z))  # Berechne Entropie
+  return(entropy)
+}
 
 analyze_data <- function(df) {
   # Spalten 2 bis 6 in numerische Werte umwandeln
@@ -511,6 +518,10 @@ analyze_data <- function(df) {
   if (anyNA(numeric_values)) {
     warning("Es gibt NA-Werte nach der Umwandlung. Bitte prüfen!")
   }
+  #
+  # if(nrow(numeric_values) > 3){
+  # numeric_values = numeric_values[-c(1:2),] #delete first 5 rows that can happen due to wrong assignments
+  # }
   
   sd = mean(apply(numeric_values, 2, sd))
   # Den größten Wert pro Zeile bestimmen
@@ -519,8 +530,14 @@ analyze_data <- function(df) {
   # Anzahl der Änderungen des größten Wertes berechnen
   changes <- sum(c(NA, diff(max_values)) != 0, na.rm = TRUE)
   
+  # Berechne Zn(j, k): Den Anteil der Zeitpunkte, in denen jeder Angreifer gedeckt wurde
+  Zn <- table(factor(max_values, levels = 1:5)) / nrow(df)
+  
+  # Berechne die defensive Entropie
+  entropy <- calculate_entropy(Zn)
+  
   # Ergebnis als Liste zurückgeben
-  data.frame(sd = sd, num_changes = changes)
+  data.frame(sd = sd, num_changes = changes, entropy = entropy)
   
   #data.frame(#max_columns = paste(max_column_names, collapse = ", "),
     #num_changes = changes)
@@ -535,9 +552,12 @@ res_df = results_df %>% group_by(gameId, playId) %>%
   summarize(average = mean(num_changes),
             sum = sum(num_changes),
             nr_player_changes = sum(player_change), 
-            average_sd = mean(sd))
+            average_sd = mean(sd),
+            average_ent = mean(entropy))
 
 res_df = merge(plays, res_df, by = c("gameId", "playId"))
+
+res_df = res_df %>% filter(pff_manZone != "Other")
 
 # Laden der ggplot2-Bibliothek
 library(ggplot2)
@@ -567,8 +587,26 @@ ggplot(res_df %>% filter(pff_manZone != "Other"), aes(x = average_sd, fill = pff
   scale_y_continuous(labels = scales::percent) + # Prozentformat auf der y-Achse
   theme_minimal()
 
-save(probs, file = "probs_8weeks.RData")
+ggplot(res_df %>% filter(pff_manZone != "Other"), aes(x = average_ent, fill = pff_manZone)) +
+  geom_histogram(aes(y = ..density..), position = "dodge", alpha = 0.7, binwidth = 0.01) +
+  labs(title = "Relative Häufigkeit der Kategorien nach Gruppe", 
+       x = "Wert von average_ent", 
+       y = "Relative Häufigkeit (Dichte)") +
+  scale_y_continuous(labels = scales::percent) + # Prozentformat auf der y-Achse
+  theme_minimal()
+
+save(res_df, file = "res_df_all_weeks.RData")
 
 res_df$day = str_sub(res_df$gameId, 1, 8)
 days = unique(res_df$day)
 res_df = res_df %>% filter(day %in% days[7:11])
+
+pl_data = res_df %>% filter(pff_manZone != "Other")
+plot(pl_data$average_ent, as.factor(pl_data$pff_manZone))
+
+par(mfrow = c(1,2))
+boxplot(pl_data$average_ent[which(pl_data$pff_manZone != "Zone")], ylim = c(0,1))
+boxplot(pl_data$average_ent[which(pl_data$pff_manZone == "Zone")], ylim = c(0,1))
+
+mod_log = glm(as.factor(pff_manZone) ~ average_ent, data = pl_data, family = "binomial")
+summary(mod_log)
