@@ -20,7 +20,7 @@ In doing so, we present a data-driven framework that evaluates the effectiveness
 
 
 <center>
-  <img src="prime_coverage_prediction.jpg" width="600" height="400" alt="Coverage Prediction">
+  <img src="prime_coverage_prediction.jpg" width="500" height="250" alt="Coverage Prediction">
 </center>
 
 ## Data
