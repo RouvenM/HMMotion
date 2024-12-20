@@ -494,6 +494,7 @@ def_ids = def_data %>%
 (players %>% filter(nflId %in% att_ids))[match(att_ids, players %>% 
                                                  filter(nflId %in% att_ids) %>% pull(nflId)), ]
 
+par(mfrow= c(1,1))
 def = 999
 def = "202209111029153565"
 start = 1
