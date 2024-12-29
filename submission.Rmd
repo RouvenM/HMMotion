@@ -7,12 +7,26 @@ date: "`r Sys.Date()`"
 
 #### <span style="color: grey;"> Submission to metric track </span>
 
+```{r colorize,echo=FALSE}
+#| echo: false
+# colorize text: use inline as `r colorize(text, color)` to print `text` in a given `color`
+# can also be used to color a color name, as in r colorize("red")`
+colorize <- function(text, color) {
+  if (missing(color)) color <- text
+  if (knitr::is_latex_output()) {
+    sprintf("\\textcolor{%s}{%s}", color, text)
+  } else if (knitr::is_html_output()) {
+    sprintf("<span style='color: %s;'>%s</span>", color, text)
+  } else text
+}
+```
+
 ```{r setup, echo = FALSE, warning=FALSE, message=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction
-Deciding between man and zone coverage is one of the most critical strategic choices a defensive coordinator must make before each offensive play in American football. While experienced offensive coordinators and quarterbacks often rely on visual cues to identify these defensive schemes, the increasing availability of player tracking data offers a new avenue to uncover and analyze these tactics. A notable example is Amazon's NFL Next Gen Stats model, which delivers predictions during live broadcasts (see a snapshot of the 2024 Week 12 matchup between the Pittsburgh Steelers and Cleveland Browns. These predictions, however, are often limited to analyzing specific plays without incorporating pre-snap motion which is a crucial element of modern offensive strategies.
+Deciding between man and zone coverage is one of the most critical strategic choices a defensive coordinator must make before each offensive play in American football. While experienced offensive coordinators and quarterbacks often rely on visual cues to identify these defensive schemes, the increasing availability of player tracking data offers a new avenue to uncover and analyze these tactics. A notable example is Amazon's NFL Next Gen Stats model, which delivers predictions during live broadcasts (see a snapshot of the 2024 Week 12 matchup between the Pittsburgh Steelers and Cleveland Browns. These predictions, however, are often limited to analyzing specific plays without incorporating pre-snap motion which is a crucial element of modern offensive strategies. `r colorize("Ich weiß nicht, ob ich das so formulieren würde... Wir wissen nicht was deren Modell alles inkludiert. Es kann gut sein, dass sie auch tracking und daher auch premotion Daten nehmen. Oder glaubst Du ist das eine Expertise von einer Person mit domain knowledge und kein statistisches Modell?","red")`  
 
 Our project takes this model a step further. While we similarly predict man or zone coverage when the teams are set, we further leverage the additional information of pre-snap player movements. Using a hidden Markov model (HMM), we model defenders' trajectories based on hidden states, which represent the offensive players they may be guarding. This probabilistic approach allows us to infer dynamic coverage patterns during plays with pre-snap motion. To exploit this high-dimensional time-series data, we calculate the entropy of the state probabilities, thus, producing measures of uncertainty for each play. Incorporating these as covariates into the existing pre-motion model significantly improves both the AUC and detection accuracy. 
 
@@ -29,7 +43,7 @@ We analyze tracking data from nine weeks of the NFL 2022 season, provided by the
 Within these plays, we concentrate on the tracking data after the line has been set (because we are not interested in how players come out of the huddle) and before the ball has been snapped by the Center. 
 
 ##### Feature engineering
-To accurately forecast the defensive scheme (man- or zone defense) for every play, we need to create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: ROBERT
+To accurately forecast the defensive scheme (man- or zone defense) for every play, we need to create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: We first consider all 11 players on each side of the field and compute features related to the convex hull of the positions of the players. In particular, for defense and offense, we compute the area spanned by the convex hull of all player such as well as the largest $y$ distance (i.e. the width of the hull) and the largest $x$ distance (i.e. the length of the hull). In addition, we select the 5 most relevant players on each side of the field (for offense: we omit the offensive line and the QB; for defense: `r colorize("TODO, Rouven","red")`) and use their standardized $x$ and $y$ coordinates as covariates. (`r colorize("Distances, orientation?? Appenix??","red")`)
 
 \textbf{UMSCHREIBEN} \textit{For all players and the ball carrier we use the features already contained in the tracking data, namely x- and y-coordinates, speed, acceleration, distance covered, orientation and direction. Except for the ball carrier we further compute the euclidean distance, x-distance and y-distance to the ball carrier. For defensive players only, we additionally compute the absolute difference of the defender’s direction and the angle of the shortest segment between the defender and the ball carrier. Subsequently, we order all players (in each frame) with respect to their euclidean distance to the ball carrier and standardize all features.
 More details regarding data pre-processing can be found in the Appendix.}
