@@ -26,12 +26,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction
-Deciding between man and zone coverage is one of the most critical strategic choices a defensive coordinator must make before each offensive play in American football. While experienced offensive coordinators and quarterbacks often rely on visual cues to identify these defensive schemes, the increasing availability of player tracking data offers a new avenue to uncover and analyze these tactics. A notable example is Amazon's NFL Next Gen Stats model, which delivers predictions during live broadcasts (see a snapshot of the 2024 Week 12 matchup between the Pittsburgh Steelers and Cleveland Browns. These predictions, however, seem to be, from a viewership's assessment, limited to specific plays without incorporating pre-snap motion which is a crucial element of modern offensive strategies. `r colorize("Ich weiß nicht, ob ich das so formulieren würde... Wir wissen nicht was deren Modell alles inkludiert. Es kann gut sein, dass sie auch tracking und daher auch premotion Daten nehmen. Oder glaubst Du ist das eine Expertise von einer Person mit domain knowledge und kein statistisches Modell? Rouven: Ne glaube das ist ein stat. Modell aber habe mir ein paar Szenen angeschaut und da kam die Prediction eigentlich immer nur wenn sich keiner bewegte.","red")`  
+Deciding between man and zone coverage is one of the most critical strategic choices a defensive coordinator must make before each offensive play in American football. While experienced offensive coordinators and quarterbacks often rely on visual cues to identify these defensive schemes, the increasing availability of player tracking data offers a new avenue to uncover and analyze these tactics. A notable example is Amazon's NFL Next Gen Stats model, which delivers coverage predictions during live broadcasts (see a snapshot of the 2024 Week 12 matchup between the Pittsburgh Steelers and Cleveland Browns). However, these models seem to be trained on plays without pre-snap motion, or at least to the situations before motions (see [Amazon](https://aws.amazon.com/de/blogs/machine-learning/identifying-defense-coverage-schemes-in-nfls-next-gen-stats/)), which is a crucial element of modern offensive strategies. 
 
-Our project takes this model a step further. While we similarly predict man or zone coverage when the teams are set, we further leverage the additional information of pre-snap player movements. Using a hidden Markov model (HMM), we model defenders' trajectories based on hidden states, which represent the offensive players they may be guarding. This probabilistic approach allows us to infer dynamic coverage patterns during plays with pre-snap motion. To exploit this high-dimensional time-series data, we calculate the entropy of the state probabilities, thus, producing measures of uncertainty for each play. Incorporating these as covariates into the existing pre-motion model significantly improves both the AUC and detection accuracy. 
-
-In doing so, we present a data-driven framework that evaluates the effectiveness of pre-snap motion in uncovering defensive strategies, providing real-time tactical insights for coaches.
-
+Our project takes this model a step further. While we similarly predict man- or zone coverage when the teams are set, we further leverage the additional information of pre-snap player movements. Using a hidden Markov model (HMM), we model defenders' trajectories based on hidden states, which represent the offensive players they may be guarding. Incorporating summary statistics of the probabilistic HMM results as covariates into the existing pre-motion model significantly improves both the AUC and detection accuracy and further allows for evaluating the effectiveness of pre-snap motion in uncovering defensive strategies, providing real-time tactical insights for coaches.
 
 <center>
   <img src="prime_coverage_prediction.jpg" width="500" height="250" alt="Coverage Prediction">
@@ -40,13 +37,8 @@ In doing so, we present a data-driven framework that evaluates the effectiveness
 ## Data
 We analyze tracking data from nine weeks of the NFL 2022 season, provided by the NFL Big Data Bowl 2024. Beside the tracking data, we also use information on plays and players. We further considered the corresponding data from PFF that assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes to each play. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. Moreover, we omit plays with more than five offensive linemen and with two quarterbacks and those plays that did not contain any pre-snap motion. Then, we end up with XY offensive plays in total, from which the defense played Y in zone and X in man coverage. 
 
-Within these plays, we concentrate on the tracking data after the line has been set (because we are not interested in how players come out of the huddle) and before the ball has been snapped by the Center. 
-
 ##### Feature engineering
 To accurately forecast the defensive scheme (man- or zone defense) for every play, we need to create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: We first consider all 11 players on each side of the field and compute features related to the convex hull of the positions of the players. In particular, for defense and offense, we compute the area spanned by the convex hull of all player such as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). In addition, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, while, for defense, we omit nose tackles, defensive tackles and defensive ends, and select the five defenders that were the closest to the five attackers corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. Finally, we use their standardized $x$ and $y$ coordinates as covariates and order defensive and offensive players according to their $y$ coordinates.. (`r colorize("Distances, orientation?? Appenix?? Rouven: würde sagen ja","red")`)
-
-\textbf{UMSCHREIBEN} \textit{For all players and the ball carrier we use the features already contained in the tracking data, namely x- and y-coordinates, speed, acceleration, distance covered, orientation and direction. Except for the ball carrier we further compute the euclidean distance, x-distance and y-distance to the ball carrier. For defensive players only, we additionally compute the absolute difference of the defender’s direction and the angle of the shortest segment between the defender and the ball carrier. Subsequently, we order all players (in each frame) with respect to their euclidean distance to the ball carrier and standardize all features.
-More details regarding data pre-processing can be found in the Appendix.}
 
 ## Analysis 
 
@@ -72,10 +64,10 @@ The results of the HMM are exemplified using the following video. It displays a 
 </video>
 </center>
 
-Using t
+This probabilistic approach allows us to infer dynamic coverage patterns during plays with pre-snap motion. To exploit this high-dimensional time-series data, we calculate the entropy of the state probabilities, thus, producing measures of uncertainty for each play. 
 
 #### 3. Post-motion prediction
-We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate results from the HMM analysis as further covariates. In particular, we include the state-switching probabilities....
+We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate results from the HMM analysis as further covariates. In particular, we use the aforementioned state probabilities of guarding the different offensive players in each second.
 
 To remediate this, we derive the decision of man- or zone coverage from the number of switches for individual players. In particular, a low number of switches when offensive players are in motion indicates man coverage whereas a higher number indicates zone coverage.
 
