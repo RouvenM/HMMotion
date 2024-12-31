@@ -56,6 +56,8 @@ ROBERT
 #### 2. Hidden Markov model
 We describe the movements of the five defensive players during the phase of pre-snap motion within a hidden Markov model (see the Appendix for a thorough description). In particular, we assume the defender's $y$-coordinates in each time step $t$ to be realizations of Gaussian distributions with means according to the $y$-coordinates of the offensive players to be guarded (these are the underlying states) and a standard deviation to be estimated (see Franks et al. 2015 for a similar approach in basketball).
 
+This probabilistic approach allows us to infer dynamic coverage patterns during plays with pre-snap motion. 
+
 OLE
 
 The results of the HMM are exemplified using the following video. It displays a touchdown from the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) is in motion. He is immediately followed by the defender Marco Wilson (AZ #20), which is a clear indication for man-coverage. 
@@ -66,16 +68,13 @@ The results of the HMM are exemplified using the following video. It displays a 
 </video>
 </center>
 
-We locally decoded this sequence.
-
-This probabilistic approach allows us to infer dynamic coverage patterns during plays with pre-snap motion. To exploit this high-dimensional time-series data, we calculate the entropy of the state probabilities, thus, producing measures of uncertainty for each play. 
-
 #### 3. Post-motion prediction
-We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, however, in this step, we incorporate results from the HMM analysis as further covariates. In particular, we use the aforementioned state probabilities of guarding the different offensive players in each second.
+We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, but, in this step, we incorporate results from the HMM analysis as further covariates. However, a caveat of the aforemententioned state probabilities is that they constitute as high-dimensional time-series data which makes them hard to use them as covariates. An outlet of this problem is to employ suitable summary statistics (`r colorize("Robert hier spezifizieren welche du final genommen hast","orange")`). In particular, we calculate for each defender the most likely offensive player in each time point $t$ and count the number of state switches. Summing these numbers across defenders and, thus, plays, are the first, relatively simple, summary statistic. In addition to that, we calculate the mean entropy during a play: 
 
-To remediate this, we derive the decision of man- or zone coverage from the number of switches for individual players. In particular, a low number of switches when offensive players are in motion indicates man coverage whereas a higher number indicates zone coverage.
+$$H(X) = - \sum_{i=1}^n P(x_i) \log_b P(x_i)$$
+Entropy is a measure of uncertainty or randomness in a probability distribution, here, the probability distribution of the defender for guarding the offensive players. Higher entropy indicates greater unpredictability, while lower entropy signifies more predictability.
 
-Entropie
+In particular, we use the aforementioned state probabilities of guarding the different offensive players in each second. To exploit this high-dimensional time-series data, we calculate the entropy of the state probabilities, thus, producing measures of uncertainty for each play. 
 
 ## Results
 
