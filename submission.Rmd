@@ -69,12 +69,10 @@ The results of the HMM are exemplified using the following video. It displays a 
 </center>
 
 #### 3. Post-motion prediction
-We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, but, in this step, we incorporate results from the HMM analysis as further covariates. However, a caveat of the aforemententioned state probabilities is that they constitute as high-dimensional time-series data which makes them hard to use them as covariates. An outlet of this problem is to employ suitable summary statistics (`r colorize("Robert hier spezifizieren welche du final genommen hast","orange")`). In particular, we calculate for each defender the most likely offensive player in each time point $t$ and count the number of state switches. Summing these numbers across defenders and, thus, plays, are the first, relatively simple, summary statistic. In addition to that, we calculate the mean entropy during a play: 
+We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, but, in this step, we incorporate results from the HMM analysis as further covariates. However, a caveat of the aforemententioned state probabilities is that they constitute as high-dimensional time-series data which makes them hard to use them as covariates. An outlet of this problem is to employ suitable summary statistics (`r colorize("Robert hier spezifizieren welche du final genommen hast, ich gehe jetzt mal von summe an switches und entropy aus","orange")`). In particular, we calculate for each defender the most likely offensive player $k = 1, \ldots, 5$ to be guarded in each time point $t = 1, \ldots, T_n$. From this, we count the number of state switches and sum these numbers across defenders as a first, simple, summary statistics and further calculate across defenders $j = 1, \ldots, 5$ the mean entropy in offensive play $n = 1,\ldots, N$, i.e.: 
 
-$$H(X) = - \sum_{i=1}^n P(x_i) \log_b P(x_i)$$
-Entropy is a measure of uncertainty or randomness in a probability distribution, here, the probability distribution of the defender for guarding the offensive players. Higher entropy indicates greater unpredictability, while lower entropy signifies more predictability.
-
-In particular, we use the aforementioned state probabilities of guarding the different offensive players in each second. To exploit this high-dimensional time-series data, we calculate the entropy of the state probabilities, thus, producing measures of uncertainty for each play. 
+$$H(n) = - \frac{1}{5}\sum_{j = 1}^5 \sum_{k=1}^{5} \left( \frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right) \cdot \log\left(\frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right)\right) \right).$$
+Entropy is a measure of uncertainty or randomness in a probability distribution, here, the empirical distribution of the defenders guarding the respective offensive players. Higher entropy indicates greater unpredictability, while lower entropy signifies more predictability.
 
 ## Results
 
