@@ -38,7 +38,7 @@ Our project takes this model a step further. While we similarly predict man- or 
 We analyze tracking data from nine weeks of the NFL 2022 season, provided by the NFL Big Data Bowl 2024. Beside the tracking data, we also use information on plays and players. We further considered the corresponding data from PFF that assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes to each play. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. Moreover, we omit plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we omit plays that did not contain any pre-snap motion. Then, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. 
 
 ##### Feature engineering
-To accurately forecast the defensive scheme (man- or zone defense) for every play, we need to create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: We first consider all 11 players on each side of the field and compute features related to the convex hull of the positions of the players. In particular, for defense and offense, we compute the area spanned by the convex hull of all player such as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). In addition, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, while, for defense, we omit nose tackles, defensive tackles and defensive ends, and select the five defenders that were the closest to the five attackers corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. Finally, we use their standardized $x$ and $y$ coordinates as features and order defensive and offensive players according to their $y$ coordinates. Additionally, for each of the relevant defenders, we compute distances to the football and their orientation with respect to the quarterback (`r colorize("values taken at event lineset. Rouven: Die Values haben wir doch rausgenommen aus dem finalen Modell oder?","orange")`). Finally, we extract relevant information from play-by-play data, such as quarter, down, yards to go, home and away score and the game clock. 
+To accurately forecast the defensive scheme (man- or zone defense) for every play, we need to create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: We first consider all 11 players on each side of the field and compute features related to the convex hull of the positions of the players. In particular, for defense and offense, we compute the area spanned by the convex hull of all player such as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). In addition, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, while, for defense, we omit nose tackles, defensive tackles and defensive ends, and select the five defenders that were the closest to the five attackers corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. Finally, we use their standardized $x$ and $y$ coordinates as features and order defensive and offensive players according to their $y$ coordinates. Additionally, for each of the relevant defenders, we compute distances to the football and their orientation with respect to the quarterback (`r colorize("values taken at event lineset. Rouven: Die Values haben wir doch rausgenommen aus dem finalen Modell oder? Robert: ich denke das sollten wir noch besprechen. Ich habe ohnehin mehrere Modelle gefitted...","orange")`). Finally, we extract relevant information from play-by-play data, such as quarter, down, yards to go, home and away score and the game clock. 
 
 Detailed information can be found in the Appendix.
 
@@ -47,11 +47,10 @@ Detailed information can be found in the Appendix.
 Our analysis comprises different steps:
 
 #### 1. Pre-motion prediction
-We train different models to predict whether the defense plays a man- or zone coverage scheme. In particular, in the first model, we only use features available pre-motion. 
+We train different models to predict whether the defense plays a man- or zone coverage scheme. In particular, we start with fitting a model only using features available pre-motion. Since the aim of the project is to show the effectiveness of pre-snap motion, this allows us to establish a baseline model for detecting zone vs man coverage without motion. 
 
-The model uses the previously described features, blablabla. 
+Since we have a limited dataset available (only 3985 plays), we want to balance the complexity of the model, i.e. we control the number of features available. Using the previously described features, we obtain 67 variables. `r colorize("6 convex hull related features (3 for offense, 3 for defense), 20 player positions features (10 standardized $x$ and $y$ coordinates, 5 for offense, 5 for defense), 30 distance features (10 Euclidian distances, 10 $x$ distances, and 10 $y$ distances to the football), 10 orientation features (5 offense, 5 defense) and 6 play by play features (probably better suited for appendix...)","orange")`. Given the small data set this is rather high number of features and therefore we consider two model classes. On the one hand, we fit an elastic net model, which performs implicit feature selection and is able to handle multicollinearity. On the other hand we use an xgboost model, which is able to capture non linear effects (and interactions) and in general also handles collinearity, but needs careful hyperparameter tuning and generally performs better on bigger data sets.    
 
-ROBERT
 
 #### 2. Hidden Markov model
 We describe the movements of the five defensive players during the phase of pre-snap motion within a hidden Markov model (see the Appendix for a thorough description). In particular, we assume the defender's $y$-coordinates in each time step $t$ to be realizations of Gaussian distributions with means according to the $y$-coordinates of the offensive players to be guarded (these are the underlying states) and a standard deviation to be estimated (see Franks et al. 2015 for a similar approach in basketball).
@@ -69,7 +68,7 @@ The results of the HMM are exemplified using the following video. It displays a 
 </center>
 
 #### 3. Post-motion prediction
-We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, but, in this step, we incorporate results from the HMM analysis as further features. However, a caveat of the aforemententioned state probabilities is that they constitute as high-dimensional time-series data which makes them hard to use them as features. An outlet of this problem is to employ suitable summary statistics (`r colorize("Robert hier spezifizieren welche du final genommen hast, ich gehe jetzt mal von summe an switches und entropy aus","orange")`). In particular, we calculate for each defender the most likely offensive player $k = 1, \ldots, 5$ to be guarded in each time point $t = 1, \ldots, T_n$. From this, we count the number of state switches and sum these numbers across defenders as a first, simple, summary statistics and further calculate across defenders $j = 1, \ldots, 5$ the mean entropy in offensive play $n = 1,\ldots, N$, i.e.: 
+We re-train the pre-motion model to predict whether the defense plays a man- or zone coverage scheme, but, in this step, we incorporate results from the HMM analysis as further features. However, a caveat of the aforemententioned state probabilities is that they constitute as high-dimensional time-series data which makes them hard to use them as features. An outlet of this problem is to employ suitable summary statistics (`r colorize("Robert hier spezifizieren welche du final genommen hast, ich gehe jetzt mal von summe an switches und entropy aus; Robert: Im moment nehmen ich alle 4 (sum, average, nr changes, average ent)... Sollten wir nochmal besprechen.","orange")`). In particular, we calculate for each defender the most likely offensive player $k = 1, \ldots, 5$ to be guarded in each time point $t = 1, \ldots, T_n$. From this, we count the number of state switches and sum these numbers across defenders as a first, simple, summary statistics and further calculate across defenders $j = 1, \ldots, 5$ the mean entropy in offensive play $n = 1,\ldots, N$, i.e.: 
 
 $$H(n) = - \frac{1}{5}\sum_{j = 1}^5 \sum_{k=1}^{5} \left( \frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right) \cdot \log\left(\frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right)\right) \right).$$
 Entropy is a measure of uncertainty or randomness in a probability distribution, here, the empirical distribution of the defenders guarding the respective offensive players. Higher entropy indicates greater unpredictability, while lower entropy signifies more predictability.
@@ -80,6 +79,22 @@ By comparing the predictive performance of our model without motion and our post
 
 auc da unbalanced data
 Hier die Animation rein mit den Verbindungen von den decodierten States 
+
+![](AUCs.png)
+![](loglosses.png)
+
+LEGENDE INFO:
+
+- Model af: alle features im model (pre motion mit distances und orientation, hmm features (average,sum,nr changes, average ent), naive postmotion, pbp)
+- Model af_ex_hmm: alle features außer hmm features (pre motion mit distances und orientation, naive postmotion, pbp)
+- Model af_npo: alle features außer naive postmotion features
+- Model af_npo_ex_hmm: alle features außer naive postmotion features und hmm features
+- Model xy_f: premotion features nur x,y coords der spieler (keine distances und orientation), sonst alle features
+- Model xy_f_ex_hmm: wie xy_f, nur ohne hmm features
+- Model xy_npo: wie xy_f, nur ohne naive postmotion features
+- Model xy_npo_ex_hmm: wie xy_npo, nur ohne hmm features
+
+
 
 robustheit checken mit simplen summarys nach der motion
 
