@@ -1,5 +1,6 @@
 library(dplyr)
 library(stringr)
+library(animation)
 
 tracking_kc_az = read.csv("tracking_kc.csv")
 defender_data = read.csv("kc_defender_data.csv")
@@ -9,22 +10,29 @@ field_length <- 120
 field_width <- 53.3
 
 pitch_colors = c("#a4e86f", "#7eb356")
-team_colors = c("red", "orange", "white")#"blue4")
+team_colors = c("#97233F", "orange", "white")#"blue4")
 los = 19
 
 clubs = levels(as.factor(tracking_kc_az$club))[levels(as.factor(tracking_kc_az$club)) != "football"]
 
 
-xlim = round(c(min(tracking_kc_az$x)-5, max(tracking_kc_az$x)+5), -1)
+xlim = round(c(min(tracking_kc_az$x) - 8, 
+               max(tracking_kc_az$x)+5), - 1)
 # ylim = round(c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1), -1)
 ylim = c(0, field_width)
 asp_ratio =  diff(xlim) / diff(ylim)
 
-xlabs = c("<10", "<20", "<30", "<40", "50", "40>", "30>", "20>", "10>")
+xlabs = c("10", "20", "30", "40", "50", "40", "30", "20", "10")
 
 par(pty = "m")  # Allow custom plot region
 par(pin = c(3, 3 / asp_ratio))  # Set fixed width and height (in inches)
 
+
+ani.options(
+  res = 400
+)
+
+# saveGIF({
 # Animation: Spielerbewegungen
 for (t in unique(tracking_kc_az$time)) {
   # Daten für den aktuellen Zeitpunkt filtern
@@ -34,7 +42,7 @@ for (t in unique(tracking_kc_az$time)) {
   plot(
     NA, 
     xlim = xlim, # c(min(tracking_kc_az$x)-1, max(tracking_kc_az$x)+1),#c(0, field_length), 
-    ylim = c(ylim[1]-5, ylim[2]), # c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1),#c(0, field_width),
+    ylim = c(ylim[1]-8, ylim[2]), # c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1),#c(0, field_width),
     # xlab = "Spielfeld-Länge", ylab = "Spielfeld-Breite",
     xlab = "", ylab = "",
     # main = paste("Spielerbewegungen - Zeit:", t), 
@@ -45,19 +53,17 @@ for (t in unique(tracking_kc_az$time)) {
     xpd = T
   )
   
-  # axis(1, at = c(2:10)*10, labels = c(10,20,30,40,50,40,30,20,10))#c(0:12)*10)
-  # axis(2, at = c(0:5)*10, labels = c(0:5)*10)
-  # grid() # Raster für das Spielfeld
-  
   # draw the endzones if necessary
-  if(xlim[1]<10){
+  if(xlim[1] < 10){
     rect(xlim[1], ylim[1], 10, ylim[2], 
-         col = scales::alpha(team_colors[1], 0.5), 
+         col = scales::alpha(team_colors[1], 0.7), 
          border = NA)
+    text(5, mean(ylim), "ARIZONA", srt = 90, 
+         col = scales::alpha(team_colors[1], 0.4), cex = 2.25)
   }
-  if(xlim[2]>110){
+  if(xlim[2] > 110){
     rect(110, ylim[1], xlim[2], ylim[2], 
-         col = scales::alpha(team_colors[3], 0.5), 
+         col = scales::alpha(team_colors[3], 0.7), 
          border = NA)
   }
   
@@ -114,9 +120,17 @@ for (t in unique(tracking_kc_az$time)) {
       )
     }
   }
+  # all players
   points(current_data$x, current_data$y,
          pch = c(16, 18, 16)[as.factor(current_data$club)],
          col = team_colors[as.factor(current_data$club)], cex = 1.5)
+  # only KC
+  points(current_data$x[which(current_data$club == "KC")], 
+         current_data$y[which(current_data$club == "KC")],
+         pch = 1, lwd = 1.5,
+         col = "#CA2430", cex = 1.5)
+  
+  # football
   points(current_data$x[which(current_data$club == "football")],
          current_data$y[which(current_data$club == "football")],
          pch = 5, col = "black", cex = 1.2, lwd = 2)
@@ -124,16 +138,24 @@ for (t in unique(tracking_kc_az$time)) {
   text(los + 3.5, ylim[1] + 4, "LOS", col = "#00000080", lwd = 2, cex = 0.9)
   
   # Box mit Spiel-Infos unten drunter
-  rect(xlim[1], ylim[1]-5, xlim[2], ylim[1], 
-       col = "#00000020", border = "black", lwd = 2)
-  text(x = mean(xlim), y = ylim[1] - 2.5, cex = 1.2,
-       labels = stringr::str_sub(t, 12, 19), col = "#00000080", lwd = 2)
-  text(x = mean(c(xlim[1], mean(xlim))), y = ylim[1] - 2.5, 
+  br = 25
+  rect(xlim[1], ylim[1] - 8, br, ylim[1], 
+       col = "#00000030", border = "black", lwd = 2)
+  rect(br, ylim[1] - 8, xlim[2], ylim[1], 
+       col = "#00000030", border = "black", lwd = 2)
+  # time
+  text(x = mean(c(xlim[1], br)), y = ylim[1] - 2.5, cex = 0.8,
+       labels = stringr::str_sub(t, 12, 19), col = "black", lwd = 2)
+  # Spielstand
+  text(x = mean(c(xlim[1], br)), y = ylim[1] - 5.5, cex = 0.8,
+       labels = "0:0", col = "black", lwd = 2)
+  # teams
+  text(x = 4.5, y = ylim[1] - 4, 
        labels = clubs[1], col = team_colors[1], lwd = 2, cex = 1.2)
-  text(x = mean(c(xlim[2], mean(xlim))), y = ylim[1] - 2.5, 
+  text(x = 20.5, y = ylim[1] - 4, 
        labels = clubs[2], col = team_colors[3], lwd = 2, cex = 1.2)
   
   # Pause für Animation
   Sys.sleep(0.1) # Wartezeit in Sekunden
 }
-
+# }, movie.name = "coverage.gif", interval = 0.1)
