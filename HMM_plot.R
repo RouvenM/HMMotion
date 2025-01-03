@@ -24,7 +24,8 @@ asp_ratio =  diff(xlim) / diff(ylim)
 
 xlabs = c("10", "20", "30", "40", "50", "40", "30", "20", "10")
 
-par(pty = "m")  # Allow custom plot region
+par(pty = "m",
+    mar = c(1,1,1,1))  # Allow custom plot region
 par(pin = c(3, 3 / asp_ratio))  # Set fixed width and height (in inches)
 
 
@@ -133,27 +134,34 @@ for (t in unique(tracking_kc_az$time)) {
   # football
   points(current_data$x[which(current_data$club == "football")],
          current_data$y[which(current_data$club == "football")],
+         pch = 18, col = "orange", cex = 1.2, lwd = 2)
+  points(current_data$x[which(current_data$club == "football")],
+         current_data$y[which(current_data$club == "football")],
          pch = 5, col = "black", cex = 1.2, lwd = 2)
   
   text(los + 3.5, ylim[1] + 4, "LOS", col = "#00000080", lwd = 2, cex = 0.9)
   
   # Box mit Spiel-Infos unten drunter
-  br = 25
-  rect(xlim[1], ylim[1] - 8, br, ylim[1], 
+  br = mean(xlim)
+  rect(xlim[1], ylim[1] - 8, xlim[2], ylim[1], 
        col = "#00000030", border = "black", lwd = 2)
-  rect(br, ylim[1] - 8, xlim[2], ylim[1], 
-       col = "#00000030", border = "black", lwd = 2)
-  # time
-  text(x = mean(c(xlim[1], br)), y = ylim[1] - 2.5, cex = 0.8,
-       labels = stringr::str_sub(t, 12, 19), col = "black", lwd = 2)
   # Spielstand
-  text(x = mean(c(xlim[1], br)), y = ylim[1] - 5.5, cex = 0.8,
+  text(x = mean(xlim), y = ylim[1] - 2.5, cex = 1,
        labels = "0:0", col = "black", lwd = 2)
   # teams
-  text(x = 4.5, y = ylim[1] - 4, 
-       labels = clubs[1], col = team_colors[1], lwd = 2, cex = 1.2)
-  text(x = 20.5, y = ylim[1] - 4, 
-       labels = clubs[2], col = team_colors[3], lwd = 2, cex = 1.2)
+  text(x = mean(c(xlim[1], br)) + 4, y = ylim[1] - 2.5, 
+       labels = clubs[1], col = team_colors[1], lwd = 2, cex = 1)
+  text(x = mean(c(br, xlim[2])) - 4, y = ylim[1] - 2.5, 
+       labels = clubs[2], col = team_colors[3], lwd = 2, cex = 1)
+  # time
+  text(x = mean(xlim), y = ylim[1] - 5.7, cex = 0.7,
+       labels = paste(
+         "1st", "9:43", "-", "2nd & GOAL"
+       ), col = "black", lwd = 2)
+  
+  # text(x = mean(xlim), y = ylim[1] - 2.5, cex = 0.8,
+  #      labels = stringr::str_sub(t, 12, 19), col = "black", lwd = 2)
+  
   
   # Pause für Animation
   Sys.sleep(0.1) # Wartezeit in Sekunden
