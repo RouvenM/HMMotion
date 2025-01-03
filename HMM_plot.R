@@ -1,5 +1,6 @@
 library(dplyr)
 library(stringr)
+
 tracking_kc_az = read.csv("tracking_kc.csv")
 defender_data = read.csv("kc_defender_data.csv")
 
@@ -7,8 +8,23 @@ defender_data = read.csv("kc_defender_data.csv")
 field_length <- 120
 field_width <- 53.3
 
-team_colors = c("blue4", "black", "red")
+pitch_colors = c("#a4e86f", "#7eb356")
+team_colors = c("red", "orange", "white")#"blue4")
 los = 19
+
+clubs = levels(as.factor(tracking_kc_az$club))[levels(as.factor(tracking_kc_az$club)) != "football"]
+
+
+xlim = round(c(min(tracking_kc_az$x)-5, max(tracking_kc_az$x)+5), -1)
+# ylim = round(c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1), -1)
+ylim = c(0, field_width)
+asp_ratio =  diff(xlim) / diff(ylim)
+
+xlabs = c("<10", "<20", "<30", "<40", "50", "40>", "30>", "20>", "10>")
+
+par(pty = "m")  # Allow custom plot region
+par(pin = c(3, 3 / asp_ratio))  # Set fixed width and height (in inches)
+
 # Animation: Spielerbewegungen
 for (t in unique(tracking_kc_az$time)) {
   # Daten für den aktuellen Zeitpunkt filtern
@@ -17,17 +33,63 @@ for (t in unique(tracking_kc_az$time)) {
   # Spielfeld zeichnen
   plot(
     NA, 
-    xlim = c(min(tracking_kc_az$x)-1, max(tracking_kc_az$x)+1),#c(0, field_length), 
-    ylim = c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1),#c(0, field_width),
-    xlab = "Spielfeld-Länge", ylab = "Spielfeld-Breite",
-    main = paste("Spielerbewegungen - Zeit:", t), asp = 1
+    xlim = xlim, # c(min(tracking_kc_az$x)-1, max(tracking_kc_az$x)+1),#c(0, field_length), 
+    ylim = c(ylim[1]-5, ylim[2]), # c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1),#c(0, field_width),
+    # xlab = "Spielfeld-Länge", ylab = "Spielfeld-Breite",
+    xlab = "", ylab = "",
+    # main = paste("Spielerbewegungen - Zeit:", t), 
+    # asp = 1, 
+    xaxt = "n", yaxt = "n",
+    bty = "n",
+    # axes = FALSE
+    xpd = T
   )
-  grid() # Raster für das Spielfeld
+  
+  # axis(1, at = c(2:10)*10, labels = c(10,20,30,40,50,40,30,20,10))#c(0:12)*10)
+  # axis(2, at = c(0:5)*10, labels = c(0:5)*10)
+  # grid() # Raster für das Spielfeld
+  
+  # draw the endzones if necessary
+  if(xlim[1]<10){
+    rect(xlim[1], ylim[1], 10, ylim[2], 
+         col = scales::alpha(team_colors[1], 0.5), 
+         border = NA)
+  }
+  if(xlim[2]>110){
+    rect(110, ylim[1], xlim[2], ylim[2], 
+         col = scales::alpha(team_colors[3], 0.5), 
+         border = NA)
+  }
+  
+  # draw the field and labels
+  i = 10
+  k = 1
+  while(i < xlim[2]){
+    if(i < xlim[2]){
+      right = i+5
+    } else{
+      right = xlim[2]
+    }
+    rect(i, ylim[1], right, ylim[2], 
+         col = scales::alpha(pitch_colors[i %% 2 + 1], 0.5), 
+         border = NA)
+    
+    if(i >= 20 & i %% 10 == 0 & i < 100){
+      text(i, ylim[2] - 4, xlabs[k], col = "#00000080", lwd = 2, cex = 0.9)
+      k = k + 1
+    }
+  
+    i = i + 5
+  }
+  
+  # draw the pitch border
+  segments(xlim[1], 0, xlim[2], 0, lwd = 2)
+  segments(xlim[1], field_width, xlim[2], field_width, lwd = 2)
+  segments(xlim[1], 0, xlim[1], field_width, lwd = 2)
   
   # Spielerpositionen hinzufügen
-  points(current_data$x, current_data$y, pch = 19, 
-         col = team_colors[as.factor(current_data$club)], cex = 2)
-  abline(v = los)
+  # abline(v = los, lwd = 2, col = "#00000080", lty = 2)
+  segments(los, ylim[1], los, ylim[2], col = "#00000080", lwd = 2)
   #text(current_data$x, current_data$y, labels = current_data$nflId, pos = 3, col = "black")
   
   # Verbindungslinien basierend auf Wahrscheinlichkeiten hinzufügen
@@ -48,10 +110,30 @@ for (t in unique(tracking_kc_az$time)) {
       lines(
         x = c(defender_pos$x, attacker_pos$x),
         y = c(defender_pos$y, attacker_pos$y),
-        col = "darkgray", lwd = 2
+        col = "#00000070", lwd = 2
       )
     }
   }
+  points(current_data$x, current_data$y,
+         pch = c(16, 18, 16)[as.factor(current_data$club)],
+         col = team_colors[as.factor(current_data$club)], cex = 1.5)
+  points(current_data$x[which(current_data$club == "football")],
+         current_data$y[which(current_data$club == "football")],
+         pch = 5, col = "black", cex = 1.2, lwd = 2)
+  
+  text(los + 3.5, ylim[1] + 4, "LOS", col = "#00000080", lwd = 2, cex = 0.9)
+  
+  # Box mit Spiel-Infos unten drunter
+  rect(xlim[1], ylim[1]-5, xlim[2], ylim[1], 
+       col = "#00000020", border = "black", lwd = 2)
+  text(x = mean(xlim), y = ylim[1] - 2.5, cex = 1.2,
+       labels = stringr::str_sub(t, 12, 19), col = "#00000080", lwd = 2)
+  text(x = mean(c(xlim[1], mean(xlim))), y = ylim[1] - 2.5, 
+       labels = clubs[1], col = team_colors[1], lwd = 2, cex = 1.2)
+  text(x = mean(c(xlim[2], mean(xlim))), y = ylim[1] - 2.5, 
+       labels = clubs[2], col = team_colors[3], lwd = 2, cex = 1.2)
+  
   # Pause für Animation
   Sys.sleep(0.1) # Wartezeit in Sekunden
 }
+
