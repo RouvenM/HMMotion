@@ -19,6 +19,7 @@ clubs = levels(as.factor(tracking_kc_az$club))[levels(as.factor(tracking_kc_az$c
 
 xlim = round(c(min(tracking_kc_az$x) - 8, 
                max(tracking_kc_az$x)+5), - 1)
+xlim[2] = 50
 # ylim = round(c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1), -1)
 ylim = c(0, field_width)
 asp_ratio =  diff(xlim) / diff(ylim)
@@ -185,7 +186,7 @@ frames <- list.files("./animation/frames", full.names = TRUE, pattern = "*.pdf")
 
 # Convert PDF frames to PNG
 png_frames <- lapply(frames, function(frame) {
-  image <- image_read(frame, density = "250")
+  image <- image_read(frame, density = "300")
   image <- image_convert(image, format = "png")
   png_file <- sub(".pdf$", ".png", frame)
   image_write(image, png_file)
@@ -198,3 +199,4 @@ png_frames = unlist(png_frames)
 animation <- image_read(png_frames)
 animation <- image_animate(animation, fps = 10)
 image_write(animation, "./animation/animation.gif")
+
