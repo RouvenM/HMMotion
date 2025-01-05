@@ -79,10 +79,6 @@ Ultimately, the goal is to use the fitted model for so-called *state-decoding*, 
 The results of the HMM are exemplified using the following video. It displays a touchdown from the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) is in motion. He is immediately followed by the defender Marco Wilson (AZ #20), which is a clear indication for man-coverage. 
 
 <center>
-knitr::include_graphics("./animation/animation.gif")
-</center>
-
-<center>
 <video width="600" height="400" controls>
   <source src="kc_az_td.mp4" type="video/mp4">
 </video>
