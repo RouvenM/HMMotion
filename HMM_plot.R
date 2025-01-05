@@ -1,6 +1,8 @@
 library(dplyr)
 library(stringr)
-library(animation)
+# library(animation)
+library(magick)
+# dir.create("animation/frames")
 
 tracking_kc_az = read.csv("tracking_kc.csv")
 defender_data = read.csv("kc_defender_data.csv")
@@ -15,7 +17,6 @@ los = 19
 
 clubs = levels(as.factor(tracking_kc_az$club))[levels(as.factor(tracking_kc_az$club)) != "football"]
 
-
 xlim = round(c(min(tracking_kc_az$x) - 8, 
                max(tracking_kc_az$x)+5), - 1)
 # ylim = round(c(min(tracking_kc_az$y)-1, max(tracking_kc_az$y)+1), -1)
@@ -24,18 +25,19 @@ asp_ratio =  diff(xlim) / diff(ylim)
 
 xlabs = c("10", "20", "30", "40", "50", "40", "30", "20", "10")
 
-par(pty = "m",
-    mar = c(1,1,1,1))  # Allow custom plot region
-par(pin = c(3, 3 / asp_ratio))  # Set fixed width and height (in inches)
-
-
-ani.options(
-  res = 400
-)
+imInd = 1
 
 # saveGIF({
 # Animation: Spielerbewegungen
 for (t in unique(tracking_kc_az$time)) {
+  
+  pdf(file = sprintf("./animation/frames/frame%03d.pdf", imInd), width = 3, height = 3 / asp_ratio)
+  
+  par(pty = "m",
+      mar = c(1,1,1,1))  # Allow custom plot region
+  par(pin = c(3, 3 / asp_ratio))  # Set fixed width and height (in inches)
+  
+  
   # Daten für den aktuellen Zeitpunkt filtern
   current_data <- tracking_kc_az[tracking_kc_az$time == t, ]
   
@@ -144,7 +146,7 @@ for (t in unique(tracking_kc_az$time)) {
   # Box mit Spiel-Infos unten drunter
   br = mean(xlim)
   rect(xlim[1], ylim[1] - 8, xlim[2], ylim[1], 
-       col = "#00000030", border = "black", lwd = 2)
+       col = "gray80", border = "black", lwd = 2)
   # Spielstand
   text(x = mean(xlim), y = ylim[1] - 2.5, cex = 1,
        labels = "0:0", col = "black", lwd = 2)
@@ -164,6 +166,21 @@ for (t in unique(tracking_kc_az$time)) {
   
   
   # Pause für Animation
-  Sys.sleep(0.1) # Wartezeit in Sekunden
+  # Sys.sleep(0.1) # Wartezeit in Sekunden
+  
+  dev.off()
+  
+  imInd = imInd + 1
 }
 # }, movie.name = "coverage.gif", interval = 0.1)
+
+
+### creating GIF
+
+# Convert PDF to GIF
+frames <- list.files("./animation/frames", full.names = TRUE, pattern = "*.pdf")
+
+# Use magick to combine frames into an animated GIF
+animation <- image_read(frames, density = "300x300")  # Read all PDF frames
+animation <- image_animate(animation, fps = 10)  # Set frame rate (10 FPS)
+image_write(animation, "./animation/animation.gif")
