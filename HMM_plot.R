@@ -59,14 +59,16 @@ for (t in unique(tracking_kc_az$time)) {
   # draw the endzones if necessary
   if(xlim[1] < 10){
     rect(xlim[1], ylim[1], 10, ylim[2], 
-         col = scales::alpha(team_colors[1], 0.7), 
+         # col = scales::alpha(team_colors[1], 0.7), 
+         col = colorspace::lighten(team_colors[1], 0.3),
          border = NA)
     text(5, mean(ylim), "ARIZONA", srt = 90, 
-         col = scales::alpha(team_colors[1], 0.4), cex = 2.25)
+         col = team_colors[1], cex = 2.25)
   }
   if(xlim[2] > 110){
     rect(110, ylim[1], xlim[2], ylim[2], 
-         col = scales::alpha(team_colors[3], 0.7), 
+         #col = scales::alpha(team_colors[3], 0.7), 
+         col = colorspace::lighten(team_colors[2], 0.3),
          border = NA)
   }
   
@@ -80,7 +82,8 @@ for (t in unique(tracking_kc_az$time)) {
       right = xlim[2]
     }
     rect(i, ylim[1], right, ylim[2], 
-         col = scales::alpha(pitch_colors[i %% 2 + 1], 0.5), 
+         # col = scales::alpha(pitch_colors[i %% 2 + 1], 0.5), 
+         col = colorspace::lighten(pitch_colors[i %% 2 + 1], 0.6),
          border = NA)
     
     if(i >= 20 & i %% 10 == 0 & i < 100){
@@ -180,7 +183,18 @@ for (t in unique(tracking_kc_az$time)) {
 # Convert PDF to GIF
 frames <- list.files("./animation/frames", full.names = TRUE, pattern = "*.pdf")
 
-# Use magick to combine frames into an animated GIF
-animation <- image_read(frames, density = "300x300")  # Read all PDF frames
-animation <- image_animate(animation, fps = 10)  # Set frame rate (10 FPS)
+# Convert PDF frames to PNG
+png_frames <- lapply(frames, function(frame) {
+  image <- image_read(frame, density = "250")
+  image <- image_convert(image, format = "png")
+  png_file <- sub(".pdf$", ".png", frame)
+  image_write(image, png_file)
+  return(png_file)
+})
+
+png_frames = unlist(png_frames)
+
+# Read PNG frames and create an animated GIF
+animation <- image_read(png_frames)
+animation <- image_animate(animation, fps = 10)
 image_write(animation, "./animation/animation.gif")

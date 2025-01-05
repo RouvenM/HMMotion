@@ -79,6 +79,10 @@ Ultimately, the goal is to use the fitted model for so-called *state-decoding*, 
 The results of the HMM are exemplified using the following video. It displays a touchdown from the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) is in motion. He is immediately followed by the defender Marco Wilson (AZ #20), which is a clear indication for man-coverage. 
 
 <center>
+knitr::include_graphics("./animation/animation.gif")
+</center>
+
+<center>
 <video width="600" height="400" controls>
   <source src="kc_az_td.mp4" type="video/mp4">
 </video>
@@ -94,7 +98,7 @@ Entropy is a measure of uncertainty or randomness in a probability distribution,
 When performing state decoding, it becomes evident that the HMM effectively captures Marco Wilson's guarding assignment. The unique strength of HMMs is particularly apparent when Marco Wilson reaches the same height as the running back, Jerick McKinnon (KC #1). At this point, clustering algorithms that disregard the temporal component would briefly suggest a change in the guarding assignment, introducing noise into summary statistics such as the total number of switches predicted by the model. In contrast, the HMM consistently and accurately maintains the correct coverage assignment throughout the motion.
 
 <center>
-  <img src="coverage.gif" width="500" height="500" alt="Coverage Prediction">
+  <img src="./animation/animation.gif" width="337" height="450" alt="Coverage Prediction">
 </center>
 
 <!-- OLD STRUCTURE -->
