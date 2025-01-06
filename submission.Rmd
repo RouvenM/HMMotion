@@ -125,6 +125,8 @@ As the entropy is a measure of uncertainty or randomness in a probability distri
 
 ### Model and feature evaluation
 
+`r colorize("Den Text finde ich irgendwie unrund und nicht so leicht verständlich.","red")`
+
 We compare the predictive performance of our three models to determine the effectiveness of player movements before snap for detecting the correct defensive scheme. We train our the models on 85% of the data and evaluate performance on the remaining 15%. Since we use cross-validation for tuning of the models during the training phase, we perform our evaluation repeatedly. We use 50 repetition each time splitting the data differently, and for each we tune and train a model and then evaluate the performance on the test set. We do this to ensure that our results are meaningful and not due to chance (especially in our small data set).
 
 `r colorize("Die plots sind noch sehr verpixelt","red")`
@@ -137,7 +139,10 @@ We compare the predictive performance of our three models to determine the effec
 <!-- ![](ACCs_bdb_main.png) -->
 <!-- ![](AUCs_bdb_main.png) -->
 
-The plots above show the results for our 50 repetitions of the experiment. First, we show the classification accuracy, when using a threshold of 50\%. Since this is an arbitrary value and our data is slightly imbalanced ($\approx$ 75\% zone coverage plays and $\approx$ 25\% man coverage plays), accuracy is not the best metric for analyzing the results. Therefore, we also present the AUC values of the model (see Appendix for a discussion on evaluation metrics). For both metrics, we notice a few things. On the one hand, the more flexible `xgboost` model performs better than the `glmnet`. However, there is more variation for the `xgboost` model, suggesting that more data would help improve the tuning of the models. On the other hand, the pre-motion model clearly performs worst. As soon as we incorporate motion information, there is a large increase in performance. While this is expected, we also see that the HMM post-motion model outperforms the model with only naive post-motion information. This shows that the HMM features capture information, which is distinct from simple motion features and provide another dimension of information, which needs to be incorporated.  
+The plots above show the results from our 50 repetitions of the experiment. The first figure illustrates classification accuracy, using a threshold of 50\%. Since this value is somewhat arbitrary and our dataset is slightly imbalanced ($\approx$ 75\% zone coverage plays and $\approx$ 25\% man coverage plays), accuracy is a suboptimal metric for evaluating the results. Hence, we also present the AUC values of the three models (see Appendix for a discussion on evaluation metrics). 
+Several observations emerge from these metrics. On the one hand, the more flexible `xgboost` model outperforms `glmnet`, but it also exhibits greater variation, indicating that additional data could enhance the tuning of this model. 
+On the other hand, the pre-motion model performs the worst. However, once motion information is incorporated, we observe a substantial improvement in performance.
+While this is to be expected, we also see that the HMM post-motion model outperforms the model with only naive post-motion information. This indicates that the HMM features capture distinct information beyond simple motion features, providing an additional dimension that enhances the overall analysis.
 
 
 ### Team analyses
@@ -150,8 +155,6 @@ Main findings:
 
 Plot: In general, motion improves the correct detection of coverage (median of most teams positive). Table: Giants (Titans) --> low number of motions but very effective 49 out of 60 (82 %) of the motion plays increased coverage detections. Miami, Atlanta, SF --> Extensive use of motion but still very effective. Raider, Seattle, Rams --> Substantial use of motion but very ineffective. Bills (Bengals) -->  little use of motion and also ineffective.
 `r colorize("Rouven, wenn Du es schaffst einen netten text zu den Findings zu verfassen wäre es super!","red")`
-
-
 
 ```{r team_tab, echo = FALSE, warning=FALSE, message=FALSE}
 
@@ -219,6 +222,14 @@ reactable(team_info |> select(url,n,n_improv,prop_improv),
 ## Discussion
 
 While we were clearly able to show that pre-snap motion facilitates the defensive coverage scheme detection, a limitation of our approach lies in the imperfect prediction accuracy of the pre-motion model, primarily due to insufficient hyperparameter tuning and the relatively small number of plays involving motion. `r colorize("Ich würde nicht mit limitations anfangen sondern mit dem was wir gezeigt haben. Außerdem sollte man das insufficient hyperparameter tuning weglassen und nur auf den kleinen Datensatz fokussieren. Wir tunen gut genug und es liegt auch am Datensatz, dass wir nicht mehr machen.","red")` However, the primary focus of this project was on pre-snap motion, particularly on how to effectively translate this information into the hidden Markov model. Importantly, our HMM approach is modular and can be seamlessly replaced by another model, such as the NFL Next Gen Stats model, in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.
+
+`r colorize("Von chatGPT:","red")`
+
+This project explored the use of hidden Markov models (HMMs) to enhance the prediction of defensive schemes in football by incorporating pre-snap player movements. Models augmented with HMM-derived features demonstrated improved predictive performance compared to those relying solely on naive motion data. The HMM effectively captured latent defensive behaviors, offering deeper insights into the defenders' actions.
+
+The HMM features allowed for more effective inference of guarding assignments, improving the distinction between man and zone coverage. This improvement underscores the HMM's capacity to model the dynamic and often subtle nature of defensive strategies, capturing patterns that simple motion features cannot.
+
+Looking ahead, the potential of HMMs goes beyond predicting man or zone defense. They could be applied to decode complex guarding assignments and analyze defensive adjustments in real-time, providing a powerful tool for deeper strategic insights in sports analytics.
 
 
 ## Code
