@@ -38,7 +38,7 @@ Hence, our contribution explores the potential of the information in pre-snap mo
 
 ## Data
 
-We aim to forecast the defensive scheme (man- or zone defense) using the `pff_passCoverage` indicator in play-by play data. We omit plays tagged as \textit{others} as well as plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Ultimately, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. 
+We aim to forecast the defensive scheme (man- or zone defense) using the `pff_passCoverage` indicator in play-by play data. We omit plays tagged as *others* as well as plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Ultimately, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. 
 
 <!--We analyze tracking data from the first nine weeks of the NFL 2022 season, provided by the NFL Big Data Bowl 2024. Moreover, we use play-by-play data and the corresponding data from PFF that assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes to each play. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. We also omit plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Then, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. -->
 
@@ -127,13 +127,23 @@ As the entropy is a measure of uncertainty or randomness in a probability distri
 
 `r colorize("Den Text finde ich irgendwie unrund und nicht so leicht verständlich.","red")`
 
-We compare the predictive performance of our three models to determine the effectiveness of player movements before snap for detecting the correct defensive scheme. We train our the models on 85% of the data and evaluate performance on the remaining 15%. Since we use cross-validation for tuning of the models during the training phase, we perform our evaluation repeatedly. We use 50 repetition each time splitting the data differently, and for each we tune and train a model and then evaluate the performance on the test set. We do this to ensure that our results are meaningful and not due to chance (especially in our small data set).
+<!--
+We compare the predictive performance of our three models to determine the effectiveness of player movements before snap for detecting the correct defensive scheme. We train the models on 85% of the data and evaluate performance on the remaining 15%. Since we use cross-validation for tuning of the models during the training phase, we perform our evaluation repeatedly. We use 50 repetition each time splitting the data differently, and for each we tune and train a model and then evaluate the performance on the test set. We do this to ensure that our results are meaningful and not due to chance (especially in our small data set).
+-->
+
+`r colorize("Vorschlag (Robert):","red")`
+
+We evaluate the predictive performance of our three models to assess how well pre-snap player movements help identify the correct defensive scheme. To do this, we split the data into two sets: 85% for training and 15% for testing. During the training phase, we use cross-validation to fine-tune the models.
+
+To ensure robust and reliable results, we repeat the evaluation process 50 times, using different cv splits for each iteration. For each split, we train and fine-tune the model on the training data and then evaluate its performance on the test set. This approach helps minimize the risk of our findings being influenced by randomness, which is particularly important given the limited size of our dataset.
 
 `r colorize("Die plots sind noch sehr verpixelt","red")`
 
+`r colorize("Robert: komisch, bei mir sind sie eig recht scharf... hab versucht es bisschen zu ändern. Wenns das nicht besser macht, weiß ich leider auch nich was hilft...","red")`
+
 <div style="text-align: center;">
-  ![](ACCs_bdb_main.png)
-  ![](AUCs_bdb_main.png)
+  ![](ACCs_bdb_main2.png)
+  ![](AUCs_bdb_main2.png)
 </div>
 
 <!-- ![](ACCs_bdb_main.png) -->
@@ -223,6 +233,15 @@ reactable(team_info |> select(url,n,n_improv,prop_improv),
 
 While we were clearly able to show that pre-snap motion facilitates the defensive coverage scheme detection, a limitation of our approach lies in the imperfect prediction accuracy of the pre-motion model, primarily due to insufficient hyperparameter tuning and the relatively small number of plays involving motion. `r colorize("Ich würde nicht mit limitations anfangen sondern mit dem was wir gezeigt haben. Außerdem sollte man das insufficient hyperparameter tuning weglassen und nur auf den kleinen Datensatz fokussieren. Wir tunen gut genug und es liegt auch am Datensatz, dass wir nicht mehr machen.","red")` However, the primary focus of this project was on pre-snap motion, particularly on how to effectively translate this information into the hidden Markov model. Importantly, our HMM approach is modular and can be seamlessly replaced by another model, such as the NFL Next Gen Stats model, in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.
 
+`r colorize("Vorschlag Robert (mit Teilen von oben und chatGPT Hilfe von unten):","red")`
+
+This project explored the use of hidden Markov models (HMMs) to enhance the prediction of defensive schemes in football by incorporating pre-snap player movements. Models augmented with HMM-derived features demonstrated improved predictive performance compared to those relying solely on naive motion data. 
+
+Comparing predictions from pre-motion and post-motion models provides insights into an offense's ability to use motion effectively to identify defensive coverage schemes. Similarly, it allows for evaluating a defense's skill in disguising their coverage and confusing the offense during pre-snap motion.
+
+While our pre- and post-motion models are limited due to small sample size available, our HMM approach is modular and therefore our models can be replaced by more another model in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.  
+
+
 `r colorize("Von chatGPT:","red")`
 
 This project explored the use of hidden Markov models (HMMs) to enhance the prediction of defensive schemes in football by incorporating pre-snap player movements. Models augmented with HMM-derived features demonstrated improved predictive performance compared to those relying solely on naive motion data. The HMM effectively captured latent defensive behaviors, offering deeper insights into the defenders' actions.
@@ -254,9 +273,9 @@ Prior to more involved feature engeneering steps, we transform the coordinate sy
 
 ### Model features and comparison
 
-As frequently mentioned, we face the problem of only having a small amount of relevant data available. In order to avoid overfitting problems, we therefore focus on a basic feature set of 32 variables for our main results: 6 convex hull related features (3 for offense and defense, respectively), 20 player positions features (10 standardized $x$ and $y$ coordinates, 5 for offense, 5 for defense), and 6 play-by-play features. However, using more thoroughly crafted features such as distances and orientation as described above, we can enlarge the feature set to 67 total variables: 30 distance variables (for each of the 10 relevant players the total distance, $x$-distances, and $y$-distances to the football), and 5 orientation variables (for each defender the orientation with respect to the QB). 
+As frequently mentioned, we face the problem of only having a small amount of relevant data available. In order to avoid overfitting problems, we therefore focus on a basic feature set of 32 variables for our main results: 6 convex hull related features (3 for offense and defense, respectively), 20 player positions features (10 standardized $x$ and 10 standardized $y$ coordinates, 5 for offense, 5 for defense), and 6 play-by-play features. However, using more thoroughly crafted features such as distances and orientation as described above, we can enlarge the feature set to 67 total variables: 30 distance variables (for each of the 10 relevant players the total distance, $x$-distances, and $y$-distances to the football), and 5 orientation variables (for each defender the orientation with respect to the QB). 
 
-In the following, we provide a comparison of these enlarged models and the smaller ones used for our main results. When comparing results of a binary outcome variable, accuracy can be a misleading metric, since it is dependent on the threshold selected for classification of the outcome. Usually, for probabilistic predictions as obtained by the two model classes considered, one uses the naive threshold of 0.5. However doing so is arbitrary and especially for imbalanced data, changing the threshold may change the results of the accuracy drastically. AUC (or area under the ROC curve) on the other hand, tries to evaluated the performance of a model over a suitable grid of thresholds, and is thus avoids the subjective choice of threshold. Another popularly used metric is the logloss (or negative log-likelihood loss), which is often a preferred choice due to being a proper scoring rule (mathematically speaking a scoring rule is proper, if it is optimal in expectation under the true probability). While using the logloss as evaluation metric is mathematically the best option, interpretation is not as intuitive. Specifically, whether a logloss of a model can be considered good, depends on the (im)balance of the classes (as well as the number of classes, which in a our binary case is only 2). We will therefore focus on these two metrics for the evaluation of the models.    
+In the following, we provide a comparison of these enlarged models and the smaller ones used for our main results. When comparing results of a binary outcome variable, accuracy can be a misleading metric, since it is dependent on the threshold selected for classification of the outcome. Usually, for probabilistic predictions as obtained by the two model classes considered, one uses the naive threshold of 0.5. However doing so is arbitrary and especially for imbalanced data, changing the threshold may change the results of the accuracy drastically. AUC (or area under the ROC curve) on the other hand, tries to evaluated the performance of a model over a suitable grid of thresholds, and thus avoids the subjective choice of threshold. Another popularly used metric is the logloss (or negative log-likelihood loss), which is often a preferred choice due to being a proper scoring rule. While using the logloss as evaluation metric is mathematically the best option, interpretation is not as intuitive. Specifically, whether a logloss of a model can be considered good, depends on the (im)balance of the classes (as well as the number of classes, which in a our binary case is only 2). Without going into further detail, we therefore focus on these two metrics for the evaluation of the models.    
 
 ![](AUCs_bdb_app.png)
 ![](Loglosses_bdb_app.png)
