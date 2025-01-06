@@ -107,7 +107,7 @@ The results of the HMM are exemplified using the following video. It displays a 
 When performing state decoding, it becomes evident that the HMM effectively captures Marco Wilson's guarding assignment. The unique strength of HMMs is particularly apparent when Marco Wilson reaches the same height as the running back, Jerick McKinnon (KC #1). At this point, clustering algorithms that disregard the temporal component would briefly suggest a change in the guarding assignment, introducing noise into summary statistics such as the total number of switches predicted by the model. In contrast, the HMM consistently and accurately maintains the correct coverage assignment throughout the motion.
 
 <center>
-  <img src="./animation/animation.gif" width="470" height="500" alt="Coverage Prediction according to a hidden Markov model.">
+  <img src="./animation/animation.gif" width="423" height="450" alt="Coverage Prediction according to a hidden Markov model.">
 </center>
 
 
