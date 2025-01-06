@@ -134,10 +134,6 @@ We compare the predictive performance of our three models to determine the effec
   ![](AUCs_bdb_main.png)
 </div>
 
-<!-- <div style="text-align: center;"> -->
-<!--   ![](AUCs_bdb_main.png) -->
-<!-- </div> -->
-
 <!-- ![](ACCs_bdb_main.png) -->
 <!-- ![](AUCs_bdb_main.png) -->
 
@@ -145,6 +141,8 @@ The plots above show the results for our 50 repetitions of the experiment. First
 
 
 ### Team analyses
+
+`r colorize("Die figure fehlt irgendwie noch","red")`
 
 ![](differences_teams.png)
 
