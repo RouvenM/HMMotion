@@ -127,13 +127,23 @@ As the entropy is a measure of uncertainty or randomness in a probability distri
 
 `r colorize("Den Text finde ich irgendwie unrund und nicht so leicht verständlich.","red")`
 
+<!--
 We compare the predictive performance of our three models to determine the effectiveness of player movements before snap for detecting the correct defensive scheme. We train the models on 85% of the data and evaluate performance on the remaining 15%. Since we use cross-validation for tuning of the models during the training phase, we perform our evaluation repeatedly. We use 50 repetition each time splitting the data differently, and for each we tune and train a model and then evaluate the performance on the test set. We do this to ensure that our results are meaningful and not due to chance (especially in our small data set).
+-->
+
+`r colorize("Vorschlag (Robert):","red")`
+
+We evaluate the predictive performance of our three models to assess how well pre-snap player movements help identify the correct defensive scheme. To do this, we split the data into two sets: 85% for training and 15% for testing. During the training phase, we use cross-validation to fine-tune the models.
+
+To ensure robust and reliable results, we repeat the evaluation process 50 times, using different cv splits for each iteration. For each split, we train and fine-tune the model on the training data and then evaluate its performance on the test set. This approach helps minimize the risk of our findings being influenced by randomness, which is particularly important given the limited size of our dataset.
 
 `r colorize("Die plots sind noch sehr verpixelt","red")`
 
+`r colorize("Robert: komisch, bei mir sind sie eig recht scharf... hab versucht es bisschen zu ändern. Wenns das nicht besser macht, weiß ich leider auch nich was hilft...","red")`
+
 <div style="text-align: center;">
-  ![](ACCs_bdb_main.png)
-  ![](AUCs_bdb_main.png)
+  ![](ACCs_bdb_main2.png)
+  ![](AUCs_bdb_main2.png)
 </div>
 
 <!-- ![](ACCs_bdb_main.png) -->
@@ -222,6 +232,15 @@ reactable(team_info |> select(url,n,n_improv,prop_improv),
 ## Discussion
 
 While we were clearly able to show that pre-snap motion facilitates the defensive coverage scheme detection, a limitation of our approach lies in the imperfect prediction accuracy of the pre-motion model, primarily due to insufficient hyperparameter tuning and the relatively small number of plays involving motion. `r colorize("Ich würde nicht mit limitations anfangen sondern mit dem was wir gezeigt haben. Außerdem sollte man das insufficient hyperparameter tuning weglassen und nur auf den kleinen Datensatz fokussieren. Wir tunen gut genug und es liegt auch am Datensatz, dass wir nicht mehr machen.","red")` However, the primary focus of this project was on pre-snap motion, particularly on how to effectively translate this information into the hidden Markov model. Importantly, our HMM approach is modular and can be seamlessly replaced by another model, such as the NFL Next Gen Stats model, in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.
+
+`r colorize("Vorschlag Robert (mit Teilen von oben und chatGPT Hilfe von unten):","red")`
+
+This project explored the use of hidden Markov models (HMMs) to enhance the prediction of defensive schemes in football by incorporating pre-snap player movements. Models augmented with HMM-derived features demonstrated improved predictive performance compared to those relying solely on naive motion data. 
+
+Comparing predictions from pre-motion and post-motion models provides insights into an offense's ability to use motion effectively to identify defensive coverage schemes. Similarly, it allows for evaluating a defense's skill in disguising their coverage and confusing the offense during pre-snap motion.
+
+While our pre- and post-motion models are limited due to small sample size available, our HMM approach is modular and therefore our models can be replaced by more another model in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.  
+
 
 `r colorize("Von chatGPT:","red")`
 
