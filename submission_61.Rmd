@@ -29,7 +29,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Deciding between man and zone coverage is one of the most critical strategic decisions a defensive coordinator must take before each offensive play in American football. While experienced offensive coordinators and quarterbacks often rely on visual cues to identify these defensive schemes, the increasing availability of player tracking data offers a new avenue to uncover these tactics. A notable example is Amazon's NFL Next Gen Stats model, which delivers coverage predictions during live broadcasts (see snapshot below). However, pre-snap motion does not seem to play an accentuated role in this model (see [Amazon](https://aws.amazon.com/de/blogs/machine-learning/identifying-defense-coverage-schemes-in-nfls-next-gen-stats/)), although it is a crucial element of modern offensive strategies. 
 
-Hence, our contribution explores the potential of incorporating pre-snap motion. While we similarly predict man- or zone coverage before motion, we further leverage the additional information of pre-snap player movements. Specifically, in addition to including rather naive post-motion features, we use an HMM to model defenders' trajectories based on hidden states, which represent the offensive players they may be guarding. Incorporating summary statistics of the state decoding results as features into the existing models substantially improves the predictive ability. This lays the groundwork for further analyses such as the evaluation of the effectiveness of pre-snap motion in uncovering defensive strategies.
+Hence, our contribution explores the potential of incorporating pre-snap motion. While we similarly predict man- or zone coverage before motion, we further leverage the additional information of pre-snap player movements. Specifically, in addition to including rather naive post-motion features, we use a hidden Markov model (HMM) to model defenders' trajectories based on hidden states, which represent the offensive players they may be guarding. Incorporating summary statistics of the state decoding results as features into the existing models substantially improves the predictive ability. This lays the groundwork for further analyses such as the evaluation of the effectiveness of pre-snap motion in uncovering defensive strategies.
 
 <center>
   <img src="prime_coverage_prediction.jpg" width="500" height="250" alt="Coverage Prediction">
@@ -38,19 +38,19 @@ Hence, our contribution explores the potential of incorporating pre-snap motion.
 
 ## Data
 
-We aim to forecast the man- or zone coverage using the `pff_passCoverage` indicator in play-by play data. We omit plays tagged as *others* and plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Ultimately, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage.
+We aim to forecast the man- or zone coverage using the `pff_passCoverage` indicator in the play-by play data. We omit plays tagged as *others* and plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Ultimately, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage.
 
 ##### Feature engineering
 
-To accurately forecast the defensive scheme, we create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: First, using all 11 players on each side, we compute the area spanned by the convex hull of a team and the largest $y$ distance (i.e., the width of the hull) and the largest $x$ distance (i.e., the length of the hull), i.e. 6 features. Then, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB and for defense, we disregard defense lineman (NT, DT, DE) and select the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. From these 10 players, we derive 20 features related to their (standardized) position.
+To accurately forecast the defensive scheme, we created various features derived from the tracking data. In particular, we conducted the following feature engineering steps: First, using all 11 players on each side, we computed the area spanned by the convex hull of a team and the largest $y$ distance (i.e., the width of the hull) and the largest $x$ distance (i.e., the length of the hull), i.e. 6 features. Then, we selected the five most relevant players on each side of the field. For offense, we omitted the offensive line and the QB and for defense, we disregarded defense lineman (NT, DT, DE) and selected the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. From these 10 players, we derived 20 features related to their (standardized) position.
 
-Additionally, we extract information from the play-by-play data, such as quarter, down, yards to go, home and away score and the remaining seconds in the current half. See the Appendix for a more detailed description and a discussion on the choice of features.
+Additionally, we extracted information from the play-by-play data, such as quarter, down, yards to go, home and away score and the remaining seconds in the current half. See the Appendix for a more detailed description and a discussion on the choice of features.
 
 ## Analysis 
 
 <!-- NEW STRUCTURE -->
 
-We train different models to predict whether the defense plays a man- or zone coverage scheme. Since the aim of the project is to show the effectiveness of pre-snap motion, we follow a three-step approach:
+We train different models to predict whether the defense plays a man- or zone coverage scheme. Since the aim of the project is to demonstrate the effectiveness of pre-snap motion for prediction, we consider the following three models:
 
 1. Pre-motion models
 2. Naive post-motion models
@@ -62,7 +62,7 @@ Regarding a suitable basic model class for predicting man or zone coverage, we o
 
 ### 1. Pre-motion models
 
-First, we fit the aforementioned models with the previously described basic pre-motion features. These very basic models serve as baseline models that allows to measure the effect of pre-snap motion (features) in the following.
+First, we fit the aforementioned models with the previously described basic pre-motion features. These very basic models serve as a baseline that allows to measure the effect of pre-snap motion (features) in the following.
 
 ### 2. Naive post-motion models
 
@@ -87,7 +87,7 @@ The results of the HMM are exemplified using the following video and animation. 
 </video>
 </center>
 
-After state decoding using the fitted HMM, we can visualize the inferred guarding assignment as depicted below. It becomes evident that the HMM effectively captures Marco Wilson's guarding assignment. The unique strength of HMMs is apparent when Marco Wilson reaches the same $y$-coordinate as the running back, Jerick McKinnon (KC #1). At this point, clustering algorithms that disregard the temporal component would briefly suggest a change in the guarding assignment, introducing noise into summary statistics such as the total number of switches predicted by the model. In contrast, the HMM consistently and accurately maintains the correct coverage assignment throughout the motion as a consequence of its temporal persistence.
+After state decoding using the fitted HMM, we can visualize the inferred guarding assignment as shown below. It becomes evident that the HMM effectively captures Marco Wilson's guarding assignment. The unique strength of HMMs is apparent when Marco Wilson reaches the same $y$-coordinate as the running back, Jerick McKinnon (KC #1). At this point, clustering algorithms that disregard the temporal component would briefly suggest a change in the guarding assignment, introducing noise into summary statistics such as the total number of switches predicted by the model. In contrast, the HMM consistently and accurately maintains the correct coverage assignment throughout the motion as a consequence of its temporal persistence.
 
 <center>
   <img src="./animation/animation.gif" width="423" height="450" alt="Coverage Prediction according to the HMM.">
@@ -202,17 +202,19 @@ This project explored the use of HMMs to enhance the prediction of defensive sch
 
 While our pre- and post-motion models are limited due to small sample size available, our HMM approach is modular and therefore our models can be seamlessly replaced by other models, potentially more complex ones in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.  
 
+
 ## Code
 
 All code for data pre-processing, model training, prediction and player evaluation can be found [here](https://github.com/janoleko/BDB-2025/).
 
 
 ## References
-*Franks A, Miller A, Bornn L, Goldsberry K (2015). Characterizing the Spatial Structure of Defensive Skill in Professional Basketball. The Annals of Applied Statistics, 9(1), DOI:10.1214/14-AOAS799
 
-*Koslik J (2024). LaMa: Fast Numerical Maximum Likelihood Estimation for Latent Markov Models. R package version 2.0.2, <https://CRAN.R-project.org/package=LaMa>.
+* Franks A, Miller A, Bornn L, Goldsberry K (2015). Characterizing the Spatial Structure of Defensive Skill in Professional Basketball. The Annals of Applied Statistics, 9(1), DOI:10.1214/14-AOAS799
 
-*Zucchini W, MacDonald I, Langrock R (2016). Hidden Markov Models for Time Series - An Introduction Using R. CRC Press
+* Koslik J (2024). LaMa: Fast Numerical Maximum Likelihood Estimation for Latent Markov Models. R package version 2.0.2, <https://CRAN.R-project.org/package=LaMa>.
+
+* Zucchini W, MacDonald I, Langrock R (2016). Hidden Markov Models for Time Series - An Introduction Using R. CRC Press
 
 
 ## Appendix
