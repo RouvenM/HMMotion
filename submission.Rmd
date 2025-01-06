@@ -133,9 +133,11 @@ We compare the predictive performance of our three models to determine the effec
 
 `r colorize("Vorschlag (Robert):","red")`
 
-We evaluate the predictive performance of our three models to assess how well pre-snap player movements help identify the correct defensive scheme. To do this, we split the data into two sets: 85% for training and 15% for testing. During the training phase, we use cross-validation to fine-tune the models.
+To assess whether the incorporation of pre-snap player movements can improve the prediction of defensive schemes, we evaluate the predictive performance of our three models. Therefore, we perform a train-test split using 85% for training and 15% for testing. To ensure robust and reliable results, we repeat the evaluation process 50 times, using different CV splits for each iteration. For each split, we train and fine-tune the model on the training data and then evaluate its performance on the test set. This approach helps minimize the risk of our findings being influenced by randomness, which is particularly important given the limited size of our dataset. The results of the evaluation are shown in the figures below.
 
-To ensure robust and reliable results, we repeat the evaluation process 50 times, using different cv splits for each iteration. For each split, we train and fine-tune the model on the training data and then evaluate its performance on the test set. This approach helps minimize the risk of our findings being influenced by randomness, which is particularly important given the limited size of our dataset.
+<!-- We evaluate the predictive performance of our three models to assess how well pre-snap player movements help identify the correct defensive scheme. To do this, we split the data into two sets: 85% for training and 15% for testing. During the training phase, we use cross-validation to fine-tune the models. -->
+
+<!-- To ensure robust and reliable results, we repeat the evaluation process 50 times, using different cv splits for each iteration. For each split, we train and fine-tune the model on the training data and then evaluate its performance on the test set. This approach helps minimize the risk of our findings being influenced by randomness, which is particularly important given the limited size of our dataset. -->
 
 `r colorize("Die plots sind noch sehr verpixelt","red")`
 
@@ -149,10 +151,10 @@ To ensure robust and reliable results, we repeat the evaluation process 50 times
 <!-- ![](ACCs_bdb_main.png) -->
 <!-- ![](AUCs_bdb_main.png) -->
 
-The plots above show the results from our 50 repetitions of the experiment. The first figure illustrates classification accuracy, using a threshold of 50\%. Since this value is somewhat arbitrary and our dataset is slightly imbalanced ($\approx$ 75\% zone coverage plays and $\approx$ 25\% man coverage plays), accuracy is a suboptimal metric for evaluating the results. Hence, we also present the AUC values of the three models (see Appendix for a discussion on evaluation metrics). 
+The two figures above show the results from our 50 repetitions of the experiment. The first figure illustrates the classification accuracy, computed using a threshold of 50\%. Since this value is somewhat arbitrary and our dataset is slightly imbalanced ($\approx$ 75\% zone coverage plays and $\approx$ 25\% man coverage plays), accuracy is a suboptimal metric for evaluating the results. Hence, we also present the AUC values of the three models (see Appendix for a discussion on evaluation metrics) in the second figure. 
 Several observations emerge from these metrics. On the one hand, the more flexible `xgboost` model outperforms `glmnet`, but it also exhibits greater variation, indicating that additional data could enhance the tuning of this model. 
-On the other hand, the pre-motion model performs the worst. However, once motion information is incorporated, we observe a substantial improvement in performance.
-While this is to be expected, we also see that the HMM post-motion model outperforms the model with only naive post-motion information. This indicates that the HMM features capture distinct information beyond simple motion features, providing an additional dimension that enhances the overall analysis.
+On the other hand, the pre-motion model clearly performs worst. Once motion information is incorporated, we observe a substantial improvement in performance.
+While this is to be expected, importantly, we also see that the HMM post-motion model outperforms the model only using naive post-motion information. This indicates that the features derived from the HMM's state decoding capture distinct information beyond simple motion features, providing an additional dimension that enhances the overall analysis.
 
 
 ### Team analyses
