@@ -29,7 +29,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Deciding between man and zone coverage is one of the most critical strategic decisions a defensive coordinator must take before each offensive play in American football. While experienced offensive coordinators and quarterbacks often rely on visual cues to identify these defensive schemes, the increasing availability of player tracking data offers a new avenue to uncover and analyze these tactics. A notable example is Amazon's NFL Next Gen Stats model, which delivers coverage predictions during live broadcasts (see a snapshot of the 2024 Week 12 match between the Pittsburgh Steelers and Cleveland Browns). However, in these pre-snap motion does not seem to play an accentuated role (see [Amazon](https://aws.amazon.com/de/blogs/machine-learning/identifying-defense-coverage-schemes-in-nfls-next-gen-stats/)), although it is a crucial element of modern offensive strategies and it is often used to detect the hidden defensive scheme. 
 
-Hence, our project goes one step further. While we similarly predict man- or zone coverage when the teams are set before snaps, we further leverage the additional information of pre-snap player movements in a specific manner. For this, we first include rather naive post-motion features. Afterwards, we use a hidden Markov model (HMM) to model defenders' trajectories based on hidden states, which represent the offensive players they may be guarding. Incorporating summary statistics of the state decoding results as features into the existing models significantly improves the predictive ability. This opens up the avenue for further analysis such as the evaluation of the effectiveness of pre-snap motion in uncovering defensive strategies.
+Hence, our contribution explores the potential of the information in pre-snap motion, previously omitted. While we similarly predict man- or zone coverage when the teams are set before snaps, we further leverage the additional information of pre-snap player movements. Specifically, in addition to including rather naive post-motion features, we use a hidden Markov model (HMM) to model defenders' trajectories based on hidden states, which represent the offensive players they may be guarding. Incorporating summary statistics of the state decoding results as features into the existing models substantially improves the predictive ability. This lays the groundwork for further analyses such as the evaluation of the effectiveness of pre-snap motion in uncovering defensive strategies.
 
 <center>
   <img src="prime_coverage_prediction.jpg" width="500" height="250" alt="Coverage Prediction">
@@ -38,24 +38,21 @@ Hence, our project goes one step further. While we similarly predict man- or zon
 
 ## Data
 
-We aim to forecast the defensive scheme (man- or zone defense) using the `pff_passCoverage` indicator in play-by play data. We omit plays tagged as \textit{others} as well as plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Then, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. 
+We aim to forecast the defensive scheme (man- or zone defense) using the `pff_passCoverage` indicator in play-by play data. We omit plays tagged as \textit{others} as well as plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Ultimately, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. 
 
 <!--We analyze tracking data from the first nine weeks of the NFL 2022 season, provided by the NFL Big Data Bowl 2024. Moreover, we use play-by-play data and the corresponding data from PFF that assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes to each play. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. We also omit plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Then, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. -->
 
 
 ##### Feature engineering
 
-To accurately forecast the defensive scheme (man- or zone defense) for every play, we create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: First, using all 11 players on each side, we compute the area spanned by the convex hull of a team as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). Then, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, thus coming up with five players that are a composition of running backs, tight ends and wide receivers. In contrast, for defense, disregarding defense liners (NT, DT, DE), we select the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. or these 10 players, we extract features related to their (standardized) position, distance and orientation.
-
+To accurately forecast the defensive scheme (man- or zone defense) for every play, we create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: First, using all 11 players on each side, we compute the area spanned by the convex hull of a team as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). Then, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, thus coming up with five players that are a composition of running backs, tight ends and wide receivers. In contrast, for defense, disregarding defense liners (NT, DT, DE), we select the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. From these 10 players, we derive features related to their (standardized) position, distance and orientation.
 <!--
 For all 11 players on each side of the field we compute features related to the convex hull of the positions of the players. In particular, for defense and offense, we compute the area spanned by the convex hull of all player such as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). In addition, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, thus coming up with five players that are a composition of running backs, tight ends and wide receivers. In contrast, for defense, we omit nose tackles, defensive tackles and defensive ends, and select the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. 
 For these 10 players, we extract features related to their (standardized) position, distance and orientation.
 <!--
 Finally, we use their standardized $x$ and $y$ coordinates as features and order defensive and offensive players according to their $y$ coordinates. Additionally, for each of the relevant defenders, we compute distances to the football and their orientation with respect to the quarterback. 
 -->
-Finally, we extract relevant information from play-by-play data, such as quarter, down, yards to go, home and away score and the remaining game time in the current half (in seconds). 
-
-More detailed information can be found in the Appendix.
+Additionally, we extract relevant information from the play-by-play data, such as quarter, down, yards to go, home and away score and the remaining game time in the current half (in seconds). See the Appendix for a more detailed description of the features.
 
 
 ## Analysis 
@@ -68,7 +65,7 @@ We train different models to predict whether the defense plays a man- or zone co
 2. Naive post-motion models
 3. HMM post-motion models
 
-In general, we have a limited dataset available (only 3985 plays) and therefore need to balance the complexity of the model, thus aiming to control the number of features. Given the small dataset, we focus on 32 previously described basic features used in all 3 models: 6 convex hull related features, 20 player features, and 6 play-by-play features. In the Appendix, we provide a discussion on the choice of features.
+In general, we have a limited dataset available (only 3985 plays) and therefore need to manage model complexity by controlling the number of features. Given the small dataset, we focus on 32 previously described basic features used in all 3 models: 6 convex hull related features, 20 player features, and 6 play-by-play features. In the Appendix, we provide a discussion on the choice of features.
 
 <!--
 `r colorize("der erste Teil ist doch eigentlich eine Wiederholung des Feature Engeneerings?","red")`
@@ -92,10 +89,14 @@ In a second step, we extend our basic pre-motion model with naive post-motion fe
 
 #### 3.1 Hidden Markov model
 
-The last step is as the heart of our approach. In particular, we use results from a hidden Markov model as further features in the previously described models. For this, we describe the movements of the five defensive players during the phase of pre-snap motion by an HMM (see the Appendix for an in-depth description). In particular, we assume that each defender's $y$-coordinate at each time point $t$ is a realization from a particular Gaussian distribution with mean according to the $y$-coordinate of the offensive player that is currently guarded and an estimated standard deviation. HMMs are particularly useful in this setting as there is no direct knowledge of the guarding allocation. This is only partially observed based on the reaction of the defender to the offenders' movement. Naturally, the model thus treats the information on who is currently guarded as a latent state variable, and hence each observation as a realization from a mixture of Gaussian distributions (see Franks et al. 2015 for a similar approach in basketball).
-Ultimately, the goal is to use the fitted model for so-called *state-decoding*, i.e. inferring information on the guarding allocation based on the observations made. For this task, HMMs not only leverage information on the $y$-coordinates of the defender and all offenders potentially guarded at each time point, but also incorporate probabilistic information based on the previous and subsequent observations. For practical details on the model fitting and state decoding, also see the Appendix.
+The previously described models primarily serve as baselines for evaluating the impact of incorporating pre-snap motion information into predicting defensive schemes. The main contribution of our project lies in the effective integration of this information using a hidden Markov model (HMM).
 
-The results of the HMM are exemplified using the following video. It displays a touchdown from the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) is in motion. He is immediately followed by the defender Marco Wilson (AZ #20), which is a clear indication for man-coverage. 
+Specifically, we use results derived from an HMM fitted to the pre-snap motion data as further features in the previously described models. To achieve this, we model the movements of the five defensive players during pre-snap motion by an HMM (see the Appendix for an in-depth description). In particular, we assume that each defender's $y$-coordinate at each time point $t$ is a realization from a Gaussian distribution with mean aligned to the $y$-coordinate of the offensive player they are guarding and an estimated standard deviation. HMMs are particularly well-suited for this task since the guarding assignments are not directly observed but need to be inferred from the defenders' responses to the offenders' movements.
+Hence, the model naturally treats this information as a latent state variable, making each observation a realization from a mixture of Gaussian distributions (see Franks et al. 2015 for a similar approach in basketball).
+The ultimate goal is to use the fitted model for *state-decoding*, i.e., inferring information on the guarding assignment based on the observations made. HMMs excel in this context as they leverage not only the defenders' $y$-coordiate as well as the $y$-coordiate of all offenders potentially guarded at the current time point, but also incorporate probabilistic information based on the previous and subsequent observations. State-decoding can either provide us with fully probabilistic information, i.e., the probability of each defender guarding each offensive player at each time point, or a single most likely guarding assignment for each defender at each time point. We will use the both to enhance our post-motion models and use the latter for visualization purposes.
+For details on model fitting and state decoding, also see the Appendix.
+
+The results of the HMM are exemplified using the following video and animation. They display a touchdown of the Kansas City Chiefs against the Arizona Cardinals in Week 1 of the 2022 NFL season. We can see that, pre-snap, Mecole Hardman (KC #17) is in motion. He is immediately followed by the defender Marco Wilson (AZ #20), which is a clear indication for man-coverage. 
 
 <center>
 <video width="600" height="400" controls>
@@ -104,7 +105,7 @@ The results of the HMM are exemplified using the following video. It displays a 
 </center>
 
 
-When performing state decoding, it becomes evident that the HMM effectively captures Marco Wilson's guarding assignment. The unique strength of HMMs is particularly apparent when Marco Wilson reaches the same height as the running back, Jerick McKinnon (KC #1). At this point, clustering algorithms that disregard the temporal component would briefly suggest a change in the guarding assignment, introducing noise into summary statistics such as the total number of switches predicted by the model. In contrast, the HMM consistently and accurately maintains the correct coverage assignment throughout the motion.
+After state decoding using the fitted HMM, we can visualize the inferred guarding assignment as depicted below. It becomes evident that the HMM effectively captures Marco Wilson's guarding assignment. The unique strength of HMMs is apparent when Marco Wilson reaches the same $y$-coordinate as the running back, Jerick McKinnon (KC #1). At this point, clustering algorithms that disregard the temporal component would briefly suggest a change in the guarding assignment, introducing noise into summary statistics such as the total number of switches predicted by the model. In contrast, the HMM consistently and accurately maintains the correct coverage assignment throughout the motion as a consequence of its temporal persistence.
 
 <center>
   <img src="./animation/animation.gif" width="423" height="450" alt="Coverage Prediction according to a hidden Markov model.">
@@ -113,11 +114,11 @@ When performing state decoding, it becomes evident that the HMM effectively capt
 
 #### 3.2 Enhanced post-motion model
 
-We re-train the post-motion model to predict whether the defense plays a man- or zone coverage scheme, but, in this step, we incorporate results from the HMM analysis as further features. However, a caveat of the aforemententioned state probabilities is that they constitute as high-dimensional time-series data which makes them hard to use as features in the previously described models. An outlet of this problem is to employ suitable summary statistics. To overcome this, we first calculate for each defender the most likely offensive player $k = 1, \ldots, 5$ to be guarded in each time point $t = 1, \ldots, T_n$, where $T_n$ is the length of the $n$-th play, and count the number of state switches, i.e. the number of times for which a defender's most likely guarded offensive players differs between two consecutive time points $s$ and $t$, $s>t$. From this, we can calculate some simple, summary statistics: 1) the sum of state switches, 2) the average number of state switches and 3) the number of defenders that switch offensive players during a play. Fourth, we use the aforementioned state decodings to calculate a more elaborated statistic, the mean entropy across defenders $j = 1, \ldots, 5$ in each offensive play $n = 1,\ldots, N$, i.e.: 
+To incorporate pre-snap information, we re-train the post-motion model to predict whether the defense employs a man- or zone-coverage scheme, now integrating results from the HMM analysis as additional features. A caveat of the aforementioned decoded state probabilities is that they form a multi-dimensional time series, complicating their direct use as features in the previously described models. This challenge can however be remedied by employing suitable summary statistics. To achieve this, we first calculate for each defender the most likely offensive player $k = 1, \ldots, 5$ to be guarded in each time point $t = 1, \ldots, T_n$, where $T_n$ is the length of the $n$-th play, and count the number of state switches, i.e. the number of times for which a defender's most likely guarded offensive players differs between two consecutive time points $t$ and $t+1$. From this, we can calculate some simple summary statistics, specifically 1) the sum of state switches, 2) the average number of state switches, and 3) the number of defenders that switch offensive players during a play. Additionally, we use the aforementioned decoded state probabilities to calculate a more elaborated statistic, the mean entropy across defenders $j = 1, \ldots, 5$ in each offensive play $n = 1,\ldots, N$:
 
-$$H(n) = - \frac{1}{5}\sum_{j = 1}^5 \sum_{k=1}^{5} \left( \frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right) \cdot \log\left(\frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right)\right) \right),$$
+$$H(n) = - \frac{1}{5}\sum_{j = 1}^5 \sum_{k=1}^{5} \left( \frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right) \cdot \log\left(\frac{1}{T_n} \sum_{t=1}^{T_n} \mathbb{1}\left(\arg\max_{i=1,\ldots,5} X_{t,i} = k\right)\right) \right)$$
 
-as the entropy is a measure of uncertainty or randomness in a probability distribution. Higher entropy indicates greater unpredictability, while lower entropy signifies more predictability.
+As the entropy is a measure of uncertainty or randomness in a probability distribution, higher entropy indicates greater unpredictability, while lower entropy signifies more predictability. In our setting, we suspect that higher entropy values are associated with less persistent guarding allocations, while lower entropy values are indicative of more stable guarding assignments. 
 
 
 ## Results
@@ -126,8 +127,19 @@ as the entropy is a measure of uncertainty or randomness in a probability distri
 
 We compare the predictive performance of our three models to determine the effectiveness of player movements before snap for detecting the correct defensive scheme. We train our the models on 85% of the data and evaluate performance on the remaining 15%. Since we use cross-validation for tuning of the models during the training phase, we perform our evaluation repeatedly. We use 50 repetition each time splitting the data differently, and for each we tune and train a model and then evaluate the performance on the test set. We do this to ensure that our results are meaningful and not due to chance (especially in our small data set).
 
-![](ACCs_bdb_main.png)
-![](AUCs_bdb_main.png)
+`r colorize("Die plots sind noch sehr verpixelt","red")`
+
+<div style="text-align: center;">
+  ![](ACCs_bdb_main.png)
+  ![](AUCs_bdb_main.png)
+</div>
+
+<!-- <div style="text-align: center;"> -->
+<!--   ![](AUCs_bdb_main.png) -->
+<!-- </div> -->
+
+<!-- ![](ACCs_bdb_main.png) -->
+<!-- ![](AUCs_bdb_main.png) -->
 
 The plots above show the results for our 50 repetitions of the experiment. First, we show the classification accuracy, when using a threshold of 50\%. Since this is an arbitrary value and our data is slightly imbalanced ($\approx$ 75\% zone coverage plays and $\approx$ 25\% man coverage plays), accuracy is not the best metric for analyzing the results. Therefore, we also present the AUC values of the model (see Appendix for a discussion on evaluation metrics). For both metrics, we notice a few things. On the one hand, the more flexible `xgboost` model performs better than the `glmnet`. However, there is more variation for the `xgboost` model, suggesting that more data would help improve the tuning of the models. On the other hand, the pre-motion model clearly performs worst. As soon as we incorporate motion information, there is a large increase in performance. While this is expected, we also see that the HMM post-motion model outperforms the model with only naive post-motion information. This shows that the HMM features capture information, which is distinct from simple motion features and provide another dimension of information, which needs to be incorporated.  
 
