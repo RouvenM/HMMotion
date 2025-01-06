@@ -35,13 +35,24 @@ Hence, our project goes one step further. While we similarly predict man- or zon
 </center>
 
 ## Data
-We analyze tracking data from the first nine weeks of the NFL 2022 season, provided by the NFL Big Data Bowl 2024. Moreover, we use play-by-play data and the corresponding data from PFF that assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes to each play. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. We also omit plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Then, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. 
+
+We aim to forecast the defensive scheme (man- or zone defense) using the `pff_passCoverage` indicator in play-by play data. We omit plays tagged as \textit{others} as well as plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Then, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. 
+
+<!--We analyze tracking data from the first nine weeks of the NFL 2022 season, provided by the NFL Big Data Bowl 2024. Moreover, we use play-by-play data and the corresponding data from PFF that assigned the categories \textit{man}, \textit{zone} and \textit{others} representing the different schemes to each play. As it is not properly described what \textit{others} means, we omit every play that is associated with this value. We also omit plays with more than five offensive linemen and with two quarterbacks. Since we are specifically interested in analyzing pre-snap player movements, we concentrate on plays that contain any pre-snap motion. Then, we end up with $3985$ offensive plays in total, from which the defense played $2973$ in zone and $1012$ in man coverage. -->
 
 ##### Feature engineering
 
-To accurately forecast the defensive scheme (man- or zone defense) for every play, we need to create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: We first consider all 11 players on each side of the field and compute features related to the convex hull of the positions of the players. In particular, for defense and offense, we compute the area spanned by the convex hull of all player such as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). In addition, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, thus coming up with five players that are a composition of running backs, tight ends and wide receivers. In contrast, for defense, we omit nose tackles, defensive tackles and defensive ends, and select the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. Finally, we use their standardized $x$ and $y$ coordinates as features and order defensive and offensive players according to their $y$ coordinates. Additionally, for each of the relevant defenders, we compute distances to the football and their orientation with respect to the quarterback. Finally, we extract relevant information from play-by-play data, such as quarter, down, yards to go, home and away score and the remaining game time in the current half (in seconds). 
+To accurately forecast the defensive scheme (man- or zone defense) for every play, we create various features derived from the tracking data. In particular, we conducted the following feature engineering steps: First, using all 11 players on each side, we compute the area spanned by the convex hull of a team as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). Then, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, thus coming up with five players that are a composition of running backs, tight ends and wide receivers. In contrast, for defense, disregarding defense liners (NT, DT, DE), we select the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. or these 10 players, we extract features related to their (standardized) position, distance and orientation.
 
-Detailed information can be found in the Appendix.
+<!--
+For all 11 players on each side of the field we compute features related to the convex hull of the positions of the players. In particular, for defense and offense, we compute the area spanned by the convex hull of all player such as well as the largest $y$ distance (i.e.\ the width of the hull) and the largest $x$ distance (i.e. the length of the hull). In addition, we select the five most relevant players on each side of the field. For offense, we omit the offensive line and the QB, thus coming up with five players that are a composition of running backs, tight ends and wide receivers. In contrast, for defense, we omit nose tackles, defensive tackles and defensive ends, and select the five defenders that were the closest to the five offensive players, corresponding to a weighted euclidean distance, putting much more emphasis on the y-axis. 
+For these 10 players, we extract features related to their (standardized) position, distance and orientation.
+<!--
+Finally, we use their standardized $x$ and $y$ coordinates as features and order defensive and offensive players according to their $y$ coordinates. Additionally, for each of the relevant defenders, we compute distances to the football and their orientation with respect to the quarterback. 
+-->
+Finally, we extract relevant information from play-by-play data, such as quarter, down, yards to go, home and away score and the remaining game time in the current half (in seconds). 
+
+More detailed information can be found in the Appendix.
 
 ## Analysis 
 
@@ -53,18 +64,21 @@ We train different models to predict whether the defense plays a man- or zone co
 2. Naive post-motion models
 3. HMM post-motion models
 
+In general, we have a limited dataset available (only 3985 plays) and therefore need to balance the complexity of the model, thus aiming to control the number of features. Given the small dataset, we focus on 32 previously described basic features used in all 3 models: 6 convex hull related features, 20 player features, and 6 play-by-play features. In the Appendix, we provide a discussion on the choice of features.
+
+<!--
 `r colorize("der erste Teil ist doch eigentlich eine Wiederholung des Feature Engeneerings?","red")`
-In general, we have a limited dataset available (only 3985 plays) and therefore need to balance the complexity of the model, thus aiming to control the number of features. Given the small dataset, we focus on 32 previously described basic features: 6 convex hull related features (3 for offense and defense, respectively), 20 player positions features (10 standardized $x$ and $y$ coordinates, 5 for offense, 5 for defense), and 6 play-by-play features. In the Appendix, we provide more details and analyses using more features. 
+In general, we have a limited dataset available (only 3985 plays) and therefore need to balance the complexity of the model, thus aiming to control the number of features. Given the small dataset, we focus on 32 previously described basic features used in all 3 models: 6 convex hull related features (3 for offense and defense, respectively), 20 player positions features (10 standardized $x$ and $y$ coordinates, 5 for offense, 5 for defense), and 6 play-by-play features. In the Appendix, we provide a discussion on the choice of features. <!--we provide more details and analyses using more features. -->
 
 #### 1. Pre-motion models
 
-First of all, we need a suitable basic model class for predicting man or zone coverage and opt for the following two: First, we fit a `glmnet` (elastic net) model, which performs implicit feature selection and is able to handle multicollinearity. Second, we use an `xgboost` model, which is able to capture non-linear effects (and interactions) and also handles multicollinearity. However, it necessitates careful hyperparameter tuning and generally performs better on bigger data sets. For all of the models, we use 10-fold cross validation on a suitable hyperparameter grid.
+First of all, we need a suitable basic model class for predicting man or zone coverage and opt for the following two: First, we fit a `glmnet` (elastic net) model, which performs implicit feature selection and is able to handle multicollinearity. Second, we use an `xgboost` model, which is able to capture non-linear effects (and interactions) and also handles multicollinearity. However, it necessitates careful hyperparameter tuning and generally performs better on bigger data sets. For all of the models, we use 10-fold cross validation on a suitable hyperparameter grid. `r colorize("Ich finde der Teil ist besser in der Einleitung zur Analyse, da wir die zwei Modellklassen ja für alle 3 Modelle verwenden. Daher auch nochmal die Beschreibung der Features oben, weil die 32 features sind einfach für alle Modell gleich.","red")`
 
 We fit the models with the previously described basic features. All of these features are derived at the time of line-set, which is why these models do not use any pre-snap motion information. These very basic models serve as baseline models that allows to measure the effect of pre-snap motion (features) in the following.
 
 #### 2. Naive post-motion models
 
-In a second step, we extend our basic pre-motion model with naive post-motion features. To keep the complexity manageable, we derive only six additional post-motion features: for each team (offense and defense), we infer the maximum $y$-distance, the maximum $x$-distance and the total distance traveled by both teams until the snap.
+In a second step, we extend our basic pre-motion model with naive post-motion features. To keep the complexity manageable, we derive only 6 additional post-motion features: for each team (offense and defense), we infer the maximum $y$-distance, the maximum $x$-distance and the total distance traveled by both teams until the snap.
 
 #### 3. HMM post-motion models
 
@@ -100,26 +114,90 @@ as the entropy is a measure of uncertainty or randomness in a probability distri
 
 #### Model and feature evaluation
 
-We compare the predictive performance of our three models to determine the effectiveness of player movements before snap for detecting the correct defensive scheme. We train our the models on 85% of the data and evaluate performance on the remaining 15%. Since we use cross-validation for tuning of the models during the training phase, and this relies on randomly dividing the data into folds, we perform our evaluation repeatedly. We fix 50 different random seeds (that is, for tuning, the data is split differently each of the 50 times), and for each we tune and train a model and then evaluate the performance of this model on the test set. We do this to ensure that our results are meaningful and not due to chance (especially in our small data set).
+We compare the predictive performance of our three models to determine the effectiveness of player movements before snap for detecting the correct defensive scheme. We train our the models on 85% of the data and evaluate performance on the remaining 15%. Since we use cross-validation for tuning of the models during the training phase, we perform our evaluation repeatedly. We use 50 repetition each time splitting the data differently, and for each we tune and train a model and then evaluate the performance on the test set. We do this to ensure that our results are meaningful and not due to chance (especially in our small data set).
 
 ![](ACCs_bdb_main.png)
 ![](AUCs_bdb_main.png)
 
-The plots above show the results for our 50 repetitions of the experiment. First, we show the classification accuracy, when using a threshold of 50\%. Since this is an arbitrary value and our data is slightly imbalanced ($\approx$ 75\% zone coverage plays and $\approx$ 25\% man coverage plays), accuracy is not the best metric for analyzing the results. Therefore, we also present the AUC values of the model (`r colorize("We also provide further metrics in the Appendix","orange")`). For both metrics, we notice a few thing. On the one hand, the more flexible `xgboost` model performs better than the `glmnet`. However, there is more variation for the `xgboost` model, suggesting that more data would help improve the tuning of the models. On the other hand, the pre-motion model clearly performs worst. As soon as we incorporate motion information, there is a large increase in performance. While this is expected, we also see that the HMM post-motion model outperforms the model with only naive post-motion information. This shows that the HMM features capture information, which is distinct from simple motion features and provide another dimension of information, which needs to be incorporated.  
+The plots above show the results for our 50 repetitions of the experiment. First, we show the classification accuracy, when using a threshold of 50\%. Since this is an arbitrary value and our data is slightly imbalanced ($\approx$ 75\% zone coverage plays and $\approx$ 25\% man coverage plays), accuracy is not the best metric for analyzing the results. Therefore, we also present the AUC values of the model (see Appendix for a discussion on evaluation metrics). For both metrics, we notice a few things. On the one hand, the more flexible `xgboost` model performs better than the `glmnet`. However, there is more variation for the `xgboost` model, suggesting that more data would help improve the tuning of the models. On the other hand, the pre-motion model clearly performs worst. As soon as we incorporate motion information, there is a large increase in performance. While this is expected, we also see that the HMM post-motion model outperforms the model with only naive post-motion information. This shows that the HMM features capture information, which is distinct from simple motion features and provide another dimension of information, which needs to be incorporated.  
 
 #### Team analyses
 
-<!--
-robustheit checken mit simplen summarys nach der motion
+![](differences_teams.png)
 
-tests mit conditional independence (vllt in Anhang)
+Main findings:
 
-team analysen
--->
+Plot: In general, motion improves the correct detection of coverage (median of most teams positive). Table: Giants (Titans) --> low number of motions but very effective 49 out of 60 (82 %) of the motion plays increased coverage detections. Miami, Atlanta, SF --> Extensive use of motion but still very effective. Raider, Seattle, Rams --> Substantial use of motion but very ineffective. Bills (Bengals) -->  little use of motion and also ineffective.
+`r colorize("Rouven, wenn Du es schaffst einen netten text zu den Findings zu verfassen wäre es super!","red")`
+
+
+
+```{r team_tab, echo = FALSE, warning=FALSE, message=FALSE}
+
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(scales)
+
+team_info <- readRDS("team_tab.rds")
+
+make_pal <- function(value,col_low = "red",col_middle = "skyblue",col_high = "darkgreen",nq = 10){
+  colourer <- col_quantile(
+    palette = c(col_low,col_middle,col_high),
+    domain = c(min(value), max(value)),
+    n = nq)
+  colourer(value)
+}
+
+team_pals <- team_info |> 
+  mutate(col1 = make_pal(n),
+         col2 = make_pal(n_improv),
+         col3 = make_pal(prop_improv))
+
+reactable(team_info |> select(url,n,n_improv,prop_improv),
+          bordered = TRUE,
+          defaultSorted = "prop_improv",
+          defaultSortOrder = "desc",
+          
+          columns = list(
+            url = colDef(
+              name = "Team",
+              maxWidth = 70,
+              align = "center",
+              cell = embed_img(height = 25, width = 40)
+            ),
+            n = colDef(
+              name = "# Motions",
+              format = colFormat(digits = 0),
+              style = color_scales(team_pals, color_ref = "col1"),
+              maxWidth = 90
+            ),
+            n_improv = colDef(
+              name = "# Plays with improved probability of predicting correct defensive scheme in post motion model",
+              format = colFormat(digits = 0),
+              style = color_scales(team_pals, color_ref = "col2")
+            ),
+            prop_improv = colDef(
+              name = "Percentation of plays with improved probability of predicting correct defensive scheme in post motion model",
+              format = colFormat(digits = 2),
+              style = color_scales(team_pals, color_ref = "col3")
+            )
+          #   avg_per_tackle2 = colDef(
+          #     name = "Avg PEP[2]",
+          #     format = colFormat(digits = 2),
+          #     style = color_scales(best_tacklers_u, color_ref = "col4"),
+          #     maxWidth = 80
+          #   )
+          )
+          
+)
+
+```
+
 
 ## Discussion
 
-While we were clearly able to show that pre-snap motion facilitates the defensive coverage scheme detection, a limitation of our approach lies in the imperfect prediction accuracy of the pre-motion model, primarily due to insufficient hyperparameter tuning and the relatively small number of plays involving motion. However, the primary focus of this project was on pre-snap motion, particularly on how to effectively translate this information into the hidden Markov model. Importantly, our HMM approach is modular and can be seamlessly replaced by another model, such as the NFL Next Gen Stats model, in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.
+While we were clearly able to show that pre-snap motion facilitates the defensive coverage scheme detection, a limitation of our approach lies in the imperfect prediction accuracy of the pre-motion model, primarily due to insufficient hyperparameter tuning and the relatively small number of plays involving motion. `r colorize("Ich würde nicht mit limitations anfangen sondern mit dem was wir gezeigt haben. Außerdem sollte man das insufficient hyperparameter tuning weglassen und nur auf den kleinen Datensatz fokussieren. Wir tunen gut genug und es liegt auch am Datensatz, dass wir nicht mehr machen.","red")` However, the primary focus of this project was on pre-snap motion, particularly on how to effectively translate this information into the hidden Markov model. Importantly, our HMM approach is modular and can be seamlessly replaced by another model, such as the NFL Next Gen Stats model, in the case of a richer data set. Combining both of these worlds could fully leverage the insights provided by the present data.
 
 ## Code
 
@@ -134,14 +212,22 @@ All code for data pre-processing, model training, prediction and player evaluati
 
 ## Appendix
 
-#### Feature engineering and model features
+#### Feature engineering
 
-As frequently mentioned, we face the problem of having only a small amount of relevant data available. While we therefore focus on a small amount of features for our models for our main results, we provide more detailed results in this sections, using more thoroughly crafted features. 
+Prior to more involved feature engeneering steps, we transform the coordinate system by redefining the x-variable as the x-distance to the endzone (such that all play directions are from right to left and the relevant endzone is at zero), and changing the direction variable, such that zero degrees represents heading straight towards the corresponding endzone. As mentioned in the main text, we use player features from 5 defensive and 5 offensive player. First, we standardized their $x$ and $y$ coordinates with respect to the football and order the players according to their $y$ coordinates. That is the the first defender in our dataset is always the leftmost defensive player, while the first offensive player is always the rightmost one (offensive play direction is from left to right). Furthermore, for each player we compute distances to the football and their orientation with respect to the quarterback.
 
-`r colorize("Results go here...","orange")`
+#### Model features and comparison
 
-We see that using the more pronounced set of features seems to provide more information. At least the `glmnet` model, which is more simple but known to be able to handle a high number of features well, the version including a bigger set of features (orientations and distances) performs better than the any other model. For the `xgboost` model, the model including most features performs on par with the one including only small set of basic features. This suggests, that with more data the model can still be improved. 
-Finally, we mention that we also varied the number of players used in the analyses. Presently, we use only information of 5 offensive and 5 defensive players. However using more information resulted in worse performance of the models, and thus we refrain from showing the results here. `r colorize("Review this section!","orange")`
+As frequently mentioned, we face the problem of having only a small amount of relevant data available. In order to avoid overfitting problems, we therefore focus on a basic features set of 32 variables for our main results: 6 convex hull related features (3 for offense and defense, respectively), 20 player positions features (10 standardized $x$ and $y$ coordinates, 5 for offense, 5 for defense), and 6 play-by-play features. However, using more thoroughly crafted features such as distances and orientation as described above, we can enlarge the feature set to 67 total variables: 30 distance variables (for each of the 10 relevant players the total distance, $x$-distances, and $y$-distances to the football), and 5 orientation variables (for each defender the orientation with respect to the QB). 
+
+In the following, we provide a comparison of these enlarged models and the smaller ones used for our main results. When comparing results of a binary outcome variable, accuracy can be a misleading metric, since it is dependent on the threshold selected for classification of the outcome. Usually, for probabilistic predictions as obtained by the two model classes considered, one uses the naive threshold of 0.5. However doing so is arbitrary and especially for imbalanced data, changing the threshold may change the results of the accuracy drastically. AUC (or area under the ROC curve) on the other hand, tries to evaluated the performance of a model over a suitable grid of thresholds, and is thus avoids the subjective choice of threshold. Another popularly used metric is the logloss (or negative log-likelihood loss), which is often a preferred choice due to being a proper scoring rule (mathematically speaking a scoring rule is proper, if it is optimal in expectation under the true probability). While using the logloss as evaluation metric is mathematically the best option, interpretation is not as intuitive. Specifically, whether a logloss of a model can be considered good, depends on the (im)balance of the classes (as well as the number of classes, which in a our binary case is only 2). We will therefore focus on these two metrics for the evaluation of the models.    
+
+![](AUCs_bdb_app.png)
+![](Loglosses_bdb_app.png)
+
+We see that using the more pronounced set of features (models contain "AF" in the name) seems to provide more information. At least the `glmnet` model, which is more simple but known to be able to handle a high number of features well, the versions including a bigger set of features (orientations and distances) performs better than the corresponding smaller models. For the `xgboost` model, the model including all features performs on par with the one including only small set of basic features. This suggests, that with more data the model may still be improved. 
+
+Finally, we mention that we also varied the number of players used in the analyses. Presently, we use only information of 5 offensive and 5 defensive players. However, using more information resulted in worse performance of the models, thus we refrain from showing the results here. 
 
 
 #### Hidden Markov model
