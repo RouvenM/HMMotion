@@ -207,7 +207,7 @@ pre_process <- function(tracking_data){
 
 #write.csv(tracking_data, here("rawdata", "full_tracking_data_preprocessed_w1.csv"), row.names = FALSE)
 
-data = read.csv(here("rawdata", "full_tracking_data_preprocessed_w1.csv"))
+data = read.csv(here("rawdata/large", "full_tracking_data_preprocessed_w1to4.csv"))
 # Spiel 2022091110, playId 291 as primary example
 
 data = data |> mutate(uniId = paste0(gameId, playId, nflId))
@@ -622,3 +622,87 @@ boxplot(pl_data$average_ent[which(pl_data$pff_manZone == "Zone")], ylim = c(0,1)
 
 mod_log = glm(as.factor(pff_manZone) ~ average_ent, data = pl_data, family = "binomial")
 summary(mod_log)
+
+
+
+
+# Model with random effects for teams -------------------------------------
+
+data$club <- as.factor(data$club)
+n_clubs <- length(unique(data$club))
+data$club_num <- as.integer(data$club)
+
+dat = list(y_pos = data$y,
+           X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + n_att + 1:n_att]),
+           ID = data$uniId,
+           n_clubs = n_clubs,
+           club_num = data$club_num,
+           n_att = n_att, 
+           Delta = as.matrix(Deltas))
+
+par = list(beta0 = -5,
+           beta_ri = rep(0, n_clubs),
+           logsigma = log(1),
+           logsigma_club = log(0.1))
+
+
+jnll = function(par){
+  getAll(par, dat)
+  
+  beta0 <- beta0[rep(1, n_att*(n_att-1))]
+
+  Gamma <- AD(array(0, dim = c(n_att, n_att, n_clubs)))
+  for(i in 1:n_clubs) {
+    Gamma[,,i] <- tpm(beta0 + beta_ri[i])
+  }
+  REPORT(Gamma)
+  
+  sigma <- exp(logsigma); REPORT(sigma)
+  sigma_club <- exp(logsigma_club); REPORT(sigma_club)
+  
+  REPORT(X)
+  REPORT(alpha)
+  
+  allprobs = matrix(1, length(y_pos), n_att)
+  ind = which(!is.na(y_pos))
+  for(j in 1:n_att){
+    allprobs[ind,j] = dnorm(y_pos, X[,j], sigma)
+  }
+  
+  nll <- -forward_g(Delta, Gamma[,,club_num], allprobs, 
+                    trackID = ID, report = FALSE)
+  
+  # random intercept densities
+  # for(i in 1:4) 
+  nll <- nll - sum(dnorm(beta_ri, 0, sigma_club, log = TRUE))
+  
+  nll
+}
+
+obj2 <- MakeADFun(jnll, par, random = "beta_ri")
+
+H <- obj2$env$spHess(random = TRUE)
+SparseM::image(H)
+
+opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
+
+mod2 <- obj2$report()
+mod2$sigma_club
+mod2$Gamma
+
+sdr <- sdreport(obj2, ignore.parm.uncertainty = TRUE)
+par_est <- as.list(sdr, "Est")
+
+beta0 <- par_est$beta0[rep(1, n_att*(n_att-1))]
+Gamma <- AD(array(0, dim = c(n_att, n_att, n_clubs)))
+for(i in 1:n_clubs) {
+  Gamma[,,i] <- tpm(beta0 + par_est$beta_ri[i])
+}
+
+gammas <- Gamma[1,1,]
+
+which.min(gammas)
+which.max(gammas)
+
+data$club[which(data$club_num == 14)[1]]
+data$club[which(data$club_num == 30)[1]]
