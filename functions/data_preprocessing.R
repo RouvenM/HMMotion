@@ -628,37 +628,56 @@ summary(mod_log)
 
 # Model with random effects for teams -------------------------------------
 
+library(Matrix)
+
 data$club <- as.factor(data$club)
+data$pos <- as.factor(data$position)
 n_clubs <- length(unique(data$club))
+n_pos <- length(unique(data$position))
 data$club_num <- as.integer(data$club)
+data$pos_num <- as.integer(data$pos)
+  
+modmat <- make_matrices(~ s(club, bs = "re") + s(pos, bs = "re"), data = data)
+Z <- Matrix(modmat$Z, sparse = TRUE)
+# Z2 <- modmat$Z
 
 dat = list(y_pos = data$y,
            X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + n_att + 1:n_att]),
            ID = data$uniId,
            n_clubs = n_clubs,
            club_num = data$club_num,
+           pos_num = data$pos_num,
            n_att = n_att, 
            Delta = as.matrix(Deltas))
 
 par = list(beta0 = -5,
-           beta_ri = rep(0, n_clubs),
+           beta_club = rep(0, n_clubs),
+           beta_pos = rep(0, n_pos),
            logsigma = log(1),
-           logsigma_club = log(0.1))
-
+           logsigma_club = log(0.1),
+           logsigma_pos = log(0.1))
 
 jnll = function(par){
   getAll(par, dat)
   
+  # beta <- t(c(beta0, beta_club, beta_pos))
+  # beta <- beta[rep(1, n_att*(n_att-1)), ]
+  
+  # Gamma <- tpm_g(Z, beta, ad = TRUE)
   beta0 <- beta0[rep(1, n_att*(n_att-1))]
 
-  Gamma <- AD(array(0, dim = c(n_att, n_att, n_clubs)))
+  Gamma <- AD(array(0, dim = c(n_att, n_att, n_clubs, n_pos)))
   for(i in 1:n_clubs) {
-    Gamma[,,i] <- tpm(beta0 + beta_ri[i])
+    for(j in 1:n_pos)
+    Gamma[,,i,j] <- tpm(beta0 + beta_club[i] + beta_pos[j])
   }
-  REPORT(Gamma)
+  REPORT(Gamma_u)
+  REPORT(beta_club)
+  REPORT(beta_pos)
   
   sigma <- exp(logsigma); REPORT(sigma)
   sigma_club <- exp(logsigma_club); REPORT(sigma_club)
+  sigma_pos <- exp(logsigma_pos); REPORT(sigma_pos)
   
   REPORT(X)
   REPORT(alpha)
@@ -669,37 +688,59 @@ jnll = function(par){
     allprobs[ind,j] = dnorm(y_pos, X[,j], sigma)
   }
   
-  nll <- -forward_g(Delta, Gamma[,,club_num], allprobs, 
-                    trackID = ID, report = FALSE)
+  # nll <- -forward_g(Delta, Gamma[,,club_num], allprobs, 
+  #                   trackID = ID, report = FALSE)
   
-  # random intercept densities
-  # for(i in 1:4) 
-  nll <- nll - sum(dnorm(beta_ri, 0, sigma_club, log = TRUE))
+  # nll <- -forward_g(Delta, Gamma, allprobs, trackID = ID)
+  nll <- 0 
+  uID <- unique(ID)
+  i <- 1
+  for(id in uID){
+    idx <- which(ID == id)
+    club_i <- club_num[idx[1]]
+    pos_i <- pos_num[idx[1]]
+    nll <- nll - forward(Delta[i, ], Gamma[,, club_i, pos_i], allprobs[idx, ], report = FALSE)
+    i <- i + 1
+  }
+  
+  REPORT(allprobs)
+  
+  # club intercept density
+  nll <- nll - sum(dnorm(beta_club, 0, sigma_club, log = TRUE))
+  
+  # pos intercept density
+  nll <- nll - sum(dnorm(beta_pos, 0, sigma_pos, log = TRUE))
   
   nll
 }
 
-obj2 <- MakeADFun(jnll, par, random = "beta_ri")
+obj2 <- MakeADFun(jnll, par, random = c("beta_club", "beta_pos"))
 
-H <- obj2$env$spHess(random = TRUE)
-SparseM::image(H)
+# H <- obj2$env$spHess(random = TRUE)
+# SparseM::image(H)
 
 opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
 
 mod2 <- obj2$report()
 mod2$sigma_club
-mod2$Gamma
+mod2$sigma_pos
+Gamma <- mod2$Gamma
+
+gammas <- Gamma[1,1,,]
+
+summary(as.vector(gammas))
+
+0.9902^50
+0.9966^50
 
 sdr <- sdreport(obj2, ignore.parm.uncertainty = TRUE)
 par_est <- as.list(sdr, "Est")
 
-beta0 <- par_est$beta0[rep(1, n_att*(n_att-1))]
-Gamma <- AD(array(0, dim = c(n_att, n_att, n_clubs)))
-for(i in 1:n_clubs) {
-  Gamma[,,i] <- tpm(beta0 + par_est$beta_ri[i])
-}
+beta_club <- par_est$beta_club
+names(beta_club) <- levels(data$club)
+beta_pos <- par_est$beta_pos
+names(beta_pos) <- levels(data$pos)
 
-gammas <- Gamma[1,1,]
 
 which.min(gammas)
 which.max(gammas)
@@ -711,5 +752,5 @@ dim(mod2$Gamma)
 nrow(mod2$allprobs)
 dim(mod2$delta)
 
-# probs <- stateprobs_g(mod = mod2)
-probs <- stateprobs_g(delta = mod2$delta, mod2$Gamma, allprobs = mod2$allprobs, trackID = mod2$trackID)
+# decoding muss in Schleife wie in likelihood passieren
+
