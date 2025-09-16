@@ -706,3 +706,10 @@ which.max(gammas)
 
 data$club[which(data$club_num == 14)[1]]
 data$club[which(data$club_num == 30)[1]]
+
+dim(mod2$Gamma)
+nrow(mod2$allprobs)
+dim(mod2$delta)
+
+# probs <- stateprobs_g(mod = mod2)
+probs <- stateprobs_g(delta = mod2$delta, mod2$Gamma, allprobs = mod2$allprobs, trackID = mod2$trackID)
