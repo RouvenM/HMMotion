@@ -7,7 +7,6 @@ library(dplyr)
 library(tidyverse)
 #devtools::install_github("janoleko/LaMa")
 library(LaMa)
-# Load the ggplot2 library
 library(ggplot2)
 # With real data ----------------------------------------------------------
 
@@ -154,7 +153,7 @@ plays = plays %>%
 
 
 # Fit model ---------------------------------------------------------------
-#data = data %>% filter(gameId == 2022091110) %>% filter(playId == 291)
+data = data %>% filter(gameId == 2022091110) #%>% filter(playId == 291)
 
 ## deterministic initial distribution
 
@@ -162,7 +161,8 @@ Deltas =   t(
   sapply((split(data, data$uniId))[as.character(unique(data$uniId))],
          function(x){
            delta = numeric(n_att)
-           delta[which.min(abs(x$y[1] - x[1, which(str_detect(names(x),"player"))[1]-1 + n_att + 1:n_att]))] = 1
+           delta[which.min(abs(x$y[1] - x[1, which(str_detect(names(x),"player"))[1]-1 + 
+                                            n_att + 1:n_att]))] = 1
            delta
          })
 )
@@ -182,7 +182,6 @@ Delta2 = t(
 
 # weighted version
 # Idea: always select the defender closest to the attacker first until
-#library(clue)
 # each attacker is assigned
 Delta2 <- t(
   sapply(split(data, data$uniId)[as.character(unique(data$uniId))],
@@ -279,7 +278,8 @@ Delta3 <- #t(
            # Repeat until all attackers are assigned
            for (i in 1:n_att) {
              # Find the global smallest distance
-             min_index <- which(matrix_copy == min(matrix_copy, na.rm = TRUE), arr.ind = TRUE)[1,]
+             min_index <- which(matrix_copy == min(matrix_copy, na.rm = TRUE), 
+                                arr.ind = TRUE)[1,]
              
              # Row and column of the minimum value
              defender <- min_index[1]
@@ -452,7 +452,7 @@ ggplot(res_df %>% filter(pff_manZone != "Other"), aes(x = average_ent, fill = pf
        y = "Relative Frequency (Density)") +
   scale_y_continuous(labels = scales::percent) + # Percent format on the y-axis
   theme_minimal()
-
+library(stringr)
 res_df$day = str_sub(res_df$gameId, 1, 8)
 days = unique(res_df$day)
 res_df = res_df %>% filter(day %in% days[7:11])
