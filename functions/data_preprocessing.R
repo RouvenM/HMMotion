@@ -1,4 +1,3 @@
-
 #### BDB 2025 - Coverage model - data preprocessing ####
 
 # Packages ----------------------------------------------------------------
@@ -194,61 +193,64 @@ pre_process <- function(tracking_data){
   return(data)
 }
 
-#tracking_data = (read.csv(here("rawdata", paste0("tracking_week_", 1, ".csv"))))
-
-# # Read in tracking data and directly preprocess to save memory for all weeks
-#tracking_data = pre_process(read.csv(here("rawdata", paste0("tracking_week_", 1, ".csv"))))
+# tracking_data = (read.csv(here("rawdata", paste0("tracking_week_", 1, ".csv"))))
 # 
-# for (week in 2:9) {
-#   tracking_data = pre_process(read.csv(here("rawdata", 
-#                                             paste0("tracking_week_", week, ".csv"))))
-#   all_tracking_data = bind_rows(all_tracking_data, tracking_data)
-# }
+# # # Read in tracking data and directly preprocess to save memory for all weeks
+# all_tracking_data = pre_process(read.csv(here("rawdata", paste0("tracking_week_", 1, ".csv"))))
+# # 
+#  for (week in 2:9) {
+#    tracking_data = pre_process(read.csv(here("rawdata", 
+#                                              paste0("tracking_week_", week, ".csv"))))
+#    all_tracking_data = bind_rows(all_tracking_data, tracking_data)
+#  }
 
-#write.csv(tracking_data, here("rawdata", "full_tracking_data_preprocessed_w1.csv"), row.names = FALSE)
+#write.csv(all_tracking_data, here("rawdata", "full_tracking_data_preprocessed_w1.csv"), row.names = FALSE)
 
-data = read.csv(here("rawdata/large", "full_tracking_data_preprocessed_w1to4.csv"))
-# Spiel 2022091110, playId 291 as primary example
+# data = read.csv(here("rawdata/large", "full_tracking_data_preprocessed_w1to4.csv"))
+# # Spiel 2022091110, playId 291 as primary example
+# 
+# data = data |> mutate(uniId = paste0(gameId, playId, nflId))
+# plays = plays %>% 
+#   mutate(game_play_id = paste0(gameId, playId)) 
+# n_att = 5
+# 
+# 
+# # Fit model ---------------------------------------------------------------
+# #data = tracking_data #|> filter(gameId == 2022091110) #|> filter(playId == 291)
+# 
+# # Now filter out the most behind players (safeties)
+# data |> filter(event == "line_set") |> group_by(game_play_id) |> 
+#   summarise(count = n()) |> filter(count == 6) |> pull(game_play_id) -> ids_6
+# 
+# data |> filter(event == "line_set") |> group_by(game_play_id) |> 
+#   summarise(count = n()) |> filter(count == 7) |> pull(game_play_id) -> ids_7
+# 
+# # schreibe mir eine Funktion, die sich die ids_6 zum Event line_set anschaut und 
+# # dann den Spieler rausschmeißt, der das kleinste y hat
+# 
+# data %>%
+#   filter(event == "line_set", game_play_id %in% c(ids_6), position != "CB") %>%
+#   group_by(game_play_id) %>%
+#   slice_min(order_by = initial_x, n = 1, with_ties = FALSE) %>%
+#   ungroup() %>%
+#   pull(uniId) -> get_out_6
+# 
+# data %>%
+#   # Markiere die Zeilen, die raus sollen
+#   filter(event == "line_set", game_play_id %in% c(ids_7), position != "CB") %>%
+#   group_by(game_play_id) %>%
+#   slice_min(order_by = initial_x, n = 2, with_ties = FALSE) %>%
+#   ungroup() %>%
+#   pull(uniId) -> get_out_7
+# 
+# data_fin = data |> filter(!(uniId %in% get_out_6)) |> filter(!(uniId %in% get_out_7))
+# 
+# 
+# data = data_fin
+# 
+# write.csv(data, here("rawdata", "final_preprocessed_all_weeks.csv"), row.names = FALSE)
 
-data = data |> mutate(uniId = paste0(gameId, playId, nflId))
-plays = plays %>% 
-  mutate(game_play_id = paste0(gameId, playId)) 
-n_att = 5
-
-
-# Fit model ---------------------------------------------------------------
-#data = tracking_data #|> filter(gameId == 2022091110) #|> filter(playId == 291)
-
-# Now filter out the most behind players (safeties)
-data |> filter(event == "line_set") |> group_by(game_play_id) |> 
-  summarise(count = n()) |> filter(count == 6) |> pull(game_play_id) -> ids_6
-
-data |> filter(event == "line_set") |> group_by(game_play_id) |> 
-  summarise(count = n()) |> filter(count == 7) |> pull(game_play_id) -> ids_7
-
-# schreibe mir eine Funktion, die sich die ids_6 zum Event line_set anschaut und 
-# dann den Spieler rausschmeißt, der das kleinste y hat
-
-data %>%
-  filter(event == "line_set", game_play_id %in% c(ids_6), position != "CB") %>%
-  group_by(game_play_id) %>%
-  slice_min(order_by = initial_x, n = 1, with_ties = FALSE) %>%
-  ungroup() %>%
-  pull(uniId) -> get_out_6
-
-data %>%
-  # Markiere die Zeilen, die raus sollen
-  filter(event == "line_set", game_play_id %in% c(ids_7), position != "CB") %>%
-  group_by(game_play_id) %>%
-  slice_min(order_by = initial_x, n = 2, with_ties = FALSE) %>%
-  ungroup() %>%
-  pull(uniId) -> get_out_7
-
-data_fin = data |> filter(!(uniId %in% get_out_6)) |> filter(!(uniId %in% get_out_7))
-
-
-data = data_fin
-
+data = read.csv(here("rawdata", "final_preprocessed_all_weeks.csv"))
 
 # Model fitting -----------------------------------------------------------
 # Berechnung der Startverteilung für einen Verteidiger
@@ -272,17 +274,20 @@ alpha <- 1  # Einflussparameter für Abstand
 # Berechnung pro Verteidiger
 Deltas <- do.call(rbind, lapply(split(data, data$uniId)[as.character(unique(data$uniId))],
                                 function(x){
+                                  # y-Koordinate des Verteidigers
                                   y_def <- x$y[1]
-                                  att_idx <- which(str_detect(names(x), "player"))[1:n_att]
-                                  y_att <- as.numeric(x[1, att_idx])
                                   
-                                  # Scores berechnen
+                                  # Indizes der Angreifer-Spalten
+                                  att_idx <- which(str_detect(names(x), "player"))[1] - 1 + n_att + 1:n_att
+                                  
+                                  # y-Koordinaten der Angreifer
+                                  y_att <- x[1, att_idx]
+                                  
+                                  # Score = exp(-alpha * Abstand)
                                   scores <- exp(-alpha * abs(y_att - y_def))
                                   
                                   # Normalisieren auf Summe = 1
-                                  scores = scores / sum(scores)
-                                  
-                                  #scores = round(scores, 3)
+                                  scores / sum(scores)
                                 }))
 
 
