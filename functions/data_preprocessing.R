@@ -250,7 +250,10 @@ pre_process <- function(tracking_data){
 # 
 # write.csv(data, here("rawdata", "final_preprocessed_all_weeks.csv"), row.names = FALSE)
 
-data = read.csv(here("rawdata", "final_preprocessed_all_weeks.csv"))
+# data <- read.csv(here("rawdata", "final_preprocessed_all_weeks.csv"))
+# data <- read.csv(here("rawdata/large", "full_tracking_data_preprocessed_w1to4.csv"))
+data <- read.csv(here("rawdata/large", "final_preprocessed_w5to9.csv"))
+
 
 # Model fitting -----------------------------------------------------------
 # Berechnung der Startverteilung für einen Verteidiger
@@ -633,7 +636,7 @@ summary(mod_log)
 
 # Model with random effects for teams -------------------------------------
 
-library(Matrix)
+# library(Matrix)
 
 data$club <- as.factor(data$club)
 data$pos <- as.factor(data$position)
@@ -642,8 +645,8 @@ n_pos <- length(unique(data$position))
 data$club_num <- as.integer(data$club)
 data$pos_num <- as.integer(data$pos)
   
-modmat <- make_matrices(~ s(club, bs = "re") + s(pos, bs = "re"), data = data)
-Z <- Matrix(modmat$Z, sparse = TRUE)
+# modmat <- make_matrices(~ s(club, bs = "re") + s(pos, bs = "re"), data = data)
+# Z <- Matrix(modmat$Z, sparse = TRUE)
 # Z2 <- modmat$Z
 
 dat = list(y_pos = data$y,
@@ -658,7 +661,7 @@ dat = list(y_pos = data$y,
 par = list(beta0 = -5,
            beta_club = rep(0, n_clubs),
            beta_pos = rep(0, n_pos),
-           logsigma = log(1),
+           logsigma = log(2),
            logsigma_club = log(0.1),
            logsigma_pos = log(0.1))
 
@@ -671,12 +674,12 @@ jnll = function(par){
   # Gamma <- tpm_g(Z, beta, ad = TRUE)
   beta0 <- beta0[rep(1, n_att*(n_att-1))]
 
-  Gamma <- AD(array(0, dim = c(n_att, n_att, n_clubs, n_pos)))
+  Gamma <- AD(array(NaN, dim = c(n_att, n_att, n_clubs, n_pos)))
   for(i in 1:n_clubs) {
     for(j in 1:n_pos)
     Gamma[,,i,j] <- tpm(beta0 + beta_club[i] + beta_pos[j])
   }
-  REPORT(Gamma_u)
+  REPORT(Gamma)
   REPORT(beta_club)
   REPORT(beta_pos)
   
@@ -684,11 +687,8 @@ jnll = function(par){
   sigma_club <- exp(logsigma_club); REPORT(sigma_club)
   sigma_pos <- exp(logsigma_pos); REPORT(sigma_pos)
   
-  REPORT(X)
-  REPORT(alpha)
-  
-  allprobs = matrix(1, length(y_pos), n_att)
-  ind = which(!is.na(y_pos))
+  allprobs <- matrix(1, length(y_pos), n_att)
+  ind <- which(!is.na(y_pos))
   for(j in 1:n_att){
     allprobs[ind,j] = dnorm(y_pos, X[,j], sigma)
   }
@@ -700,33 +700,50 @@ jnll = function(par){
   nll <- 0 
   uID <- unique(ID)
   i <- 1
+
   for(id in uID){
     idx <- which(ID == id)
     club_i <- club_num[idx[1]]
     pos_i <- pos_num[idx[1]]
+    
+    # logallprobs <- matrix(0, length(idx), n_att)
+    # this_y <- y_pos[idx]
+    # ind <- which(!is.na(this_y))
+    # for(j in 1:n_att){
+    #   logallprobs[ind,j] <- dnorm(this_y[ind], X[idx[ind],j], sigma, log = TRUE)
+    # }
+    
+    # nll <- nll - forward(Delta[i, ], Gamma[,, club_i, pos_i], logallprobs, report = FALSE, logspace = TRUE)
+    
     nll <- nll - forward(Delta[i, ], Gamma[,, club_i, pos_i], allprobs[idx, ], report = FALSE)
     i <- i + 1
   }
   
   REPORT(allprobs)
   
-  # club intercept density
+  # club random effect likelihood
   nll <- nll - sum(dnorm(beta_club, 0, sigma_club, log = TRUE))
   
-  # pos intercept density
+  # pos random effect likelihood
   nll <- nll - sum(dnorm(beta_pos, 0, sigma_pos, log = TRUE))
   
   nll
 }
 
 obj2 <- MakeADFun(jnll, par, random = c("beta_club", "beta_pos"))
+print("done")
 
 # H <- obj2$env$spHess(random = TRUE)
 # SparseM::image(H)
 
-opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
+system.time(
+  opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
+)
 
 mod2 <- obj2$report()
+
+saveRDS(mod2, "./results/mod_w1to4.rds")
+
 mod2$sigma_club
 mod2$sigma_pos
 Gamma <- mod2$Gamma
@@ -738,12 +755,14 @@ summary(as.vector(gammas))
 0.9902^50
 0.9966^50
 
-sdr <- sdreport(obj2, ignore.parm.uncertainty = TRUE)
-par_est <- as.list(sdr, "Est")
+# sdr <- sdreport(obj2, ignore.parm.uncertainty = TRUE)
+# par_est <- as.list(sdr, "Est")
 
-beta_club <- par_est$beta_club
+# beta_club <- par_est$beta_club
+beta_club <- mod2$beta_club
 names(beta_club) <- levels(data$club)
-beta_pos <- par_est$beta_pos
+# beta_pos <- par_est$beta_pos
+beta_pos <- mod2$beta_pos
 names(beta_pos) <- levels(data$pos)
 
 
