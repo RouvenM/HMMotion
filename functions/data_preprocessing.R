@@ -742,7 +742,25 @@ system.time(
 
 mod2 <- obj2$report()
 
-saveRDS(mod2, "./results/mod_w1to4.rds")
+saveRDS(mod2, "./results/mod_w5to9.rds")
+
+mod14 <- readRDS("./results/mod_w1to4.rds")
+mod59 <- readRDS("./results/mod_w5to9.rds")
+
+names(mod14$beta_pos) <- levels(data$pos)
+names(mod59$beta_pos) <- levels(data$pos)
+
+rbind(mod14$beta_pos, mod59$beta_pos)
+
+names(mod14$beta_club) <- levels(data$club)
+names(mod59$beta_club) <- levels(data$club)
+
+rbind(mod14$beta_club, mod59$beta_club)
+
+plot(mod14$beta_club, mod59$beta_club)
+abline(0,1)
+
+mod <- lm(mod59$beta_club ~ mod14$beta_club)
 
 mod2$sigma_club
 mod2$sigma_pos
@@ -752,8 +770,6 @@ gammas <- Gamma[1,1,,]
 
 summary(as.vector(gammas))
 
-0.9902^50
-0.9966^50
 
 # sdr <- sdreport(obj2, ignore.parm.uncertainty = TRUE)
 # par_est <- as.list(sdr, "Est")
