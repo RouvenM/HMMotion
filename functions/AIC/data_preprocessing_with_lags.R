@@ -312,8 +312,7 @@ pre_process <- function(tracking_data){
 
 #write.csv(data, here("rawdata", "final_preprocessed_all_weeks_lag4.csv"), row.names = FALSE)
 
-
-data <- read.csv(here("rawdata/large", "final_preprocessed_all_weeks_lag4.csv"))
+data <- read.csv(here("rawdata", "final_preprocessed_all_weeks_lag4.csv"))
 
 # Model fitting -----------------------------------------------------------
 # Berechnung der Startverteilung für einen Verteidiger
@@ -333,7 +332,11 @@ alpha <- 1  # Einflussparameter für Abstand
 #We initialize the defender-attacker assignments using a softmax over the negative vertical distances between players, 
 # following standard probabilistic matching approaches (Bishop, 2006; Cuturi, 2013). The parameter𝛼
 # controls the sharpness of the distribution, with higher values leading to almost deterministic assignments.
-Deltas <- do.call(rbind, lapply(split(data, data$uniId)[as.character(unique(data$uniId))],
+Deltas_list <- list()
+# Berechnung pro Verteidiger
+for (i in 1:(max_lag+1)) {
+  
+  Deltas_list[[i]] <- do.call(rbind, lapply(split(datasets[[i]], datasets[[i]]$uniId)[as.character(unique(datasets[[i]]$uniId))],
                                 function(x){
                                   # y-Koordinate des Verteidigers
                                   y_def <- x$y[1]
@@ -351,6 +354,8 @@ Deltas <- do.call(rbind, lapply(split(data, data$uniId)[as.character(unique(data
                                   scores / sum(scores)
                                 }))
 
+
+}
 # Old Deltas --------------------------------------------------------------
 ## deterministic initial distribution
 # Deltas =   t(
@@ -514,8 +519,13 @@ Deltas <- do.call(rbind, lapply(split(data, data$uniId)[as.character(unique(data
 
 
 # Model fitting -----------------------------------------------------------
+AIC_off <- rep(NA, max_lag+1)
 
-dat = list(y_pos = data$y,
+for (i in 1:(max_lag+1)) {
+  data = datasets[[i]]
+  Deltas = Deltas_list[[i]]
+  
+  dat = list(y_pos = data$y,
            X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + n_att + 1:n_att]),
            ID = data$uniId,
            n_att = n_att, 
@@ -564,10 +574,34 @@ diag_indices <- abs(diag_indices)
 
 # Faktor für Mapping
 map <- list(eta = factor(diag_indices))
- 
+
 
 obj = MakeADFun(nll, par, map = map)
 opt = nlminb(obj$par, obj$fn, obj$gr)
+
+# Anzahl der frei geschätzten Parameter
+k <- length(opt$par)
+
+# AIC berechnen
+AIC_off[i] <- 2 * k + 2 * opt$objective
+}
+
+load("AIC_1to4_lags.RData")
+
+AIC_new = data.frame(lag = 0:5, AIC = AIC_off)
+#, data.frame(lag = 0:5))
+library(ggplot2)
+library(scales)
+
+ggplot(AIC_new, aes(x = lag, y = AIC)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Lag", y = "AIC") +
+  scale_y_continuous(labels = label_scientific()) +
+  theme_minimal()
+
+
+#opt$objective; opt_onlydiag$objective
 
 mod = obj$report()
 (Delta = mod$delta)
@@ -782,54 +816,19 @@ jnll = function(par){
   nll
 }
 
+obj2 <- MakeADFun(jnll, par, random = c("beta_club", "beta_pos"))
+print("done")
 
-TMB::config(tmbad.sparse_hessian_compress=TRUE)
-TapeConfig(matmul="plain") ## unrelated, but seems beneficial when matrices a small
+# H <- obj2$env$spHess(random = TRUE)
+# SparseM::image(H)
 
-# obj2 <- MakeADFun(jnll, par, random = c("beta_club", "beta_pos"))
-# print("done")
-# 
-# # H <- obj2$env$spHess(random = TRUE)
-# # SparseM::image(H)
-# 
-# system.time(
-#   opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
-# )
+system.time(
+  opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
+)
 
-# mod2 <- obj2$report()
+mod2 <- obj2$report()
 
-
-
-# saveRDS(mod2, "./results/mod_full.rds")
-# saveRDS(mod2, "./results/mod_w5to9.rds")
-
-mod_full <- readRDS("./results/mod_full.rds")
-
-
-# state decoding
-
-stateprobs <- list()
-
-uID <- unique(dat$ID)
-i <- 1
-for(id in uID){
-  idx <- which(dat$ID == id)
-  club_i <- dat$club_num[idx[1]]
-  pos_i <- dat$pos_num[idx[1]]
-  
-  stateprobs[[i]] <- stateprobs(dat$Delta[i, ], mod_full$Gamma[,, club_i, pos_i], mod_full$allprobs[idx, ])
-  i <- i + 1
-}
-
-# turn into matrix
-stateprobs_mat <- do.call(rbind, stateprobs)
-colnames(stateprobs_mat) <- paste0("attacker_", 1:n_att)
-stateprobs_df <- as.data.frame(stateprobs_mat)
-
-saveRDS(stateprobs_df, "./results/stateprobs_full.rds")
-saveRDS(stateprobs_mat, "./results/stateprobs_full_mat.rds")
-
-
+saveRDS(mod2, "./results/mod_w5to9.rds")
 
 mod14 <- readRDS("./results/mod_w1to4.rds")
 mod59 <- readRDS("./results/mod_w5to9.rds")
