@@ -513,6 +513,23 @@ Deltas <- do.call(rbind, lapply(split(data, data$uniId)[as.character(unique(data
 # data = data %>% filter(uniId %in% rnames_new) 
 
 
+# Compute pairwise distances between attackers
+Att_y <- as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + n_att + 1:n_att])
+pairs <- combn(n_att, 2)
+# Compute pairwise distances
+dist_mat <- sapply(1:ncol(pairs), function(k) {
+  i <- pairs[1, k]
+  j <- pairs[2, k]
+  abs(Att_y[, i] - Att_y[, j])
+})
+
+# Assign meaningful column names
+colnames(dist_mat) <- apply(pairs, 2, function(idx)
+  paste0("dist_y_", idx[1], "_", idx[2])
+)
+
+
+
 # Model fitting -----------------------------------------------------------
 
 dat = list(y_pos = data$y,
