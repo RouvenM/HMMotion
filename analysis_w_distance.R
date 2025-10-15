@@ -545,9 +545,11 @@ system.time(
   opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
 )
 
-# mod2 <- obj2$report()
+mod2 <- obj2$report()
 
 sdr <- sdreport(obj2)
+
+saveRDS(mod2, "./results/mod200_w_dist.rds")
 
 
 # saveRDS(mod2, "./results/mod_full.rds")
