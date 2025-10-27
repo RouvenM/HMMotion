@@ -4,7 +4,6 @@
 
 library(dplyr)
 library(tidyverse)
-#devtools::install_github("janoleko/LaMa")
 library(LaMa)
 library(ggplot2)
 library(here)
@@ -199,7 +198,7 @@ data <- read.csv(here("rawdata/large", "final_preprocessed_all_weeks_lag4.csv"))
 # smaller data
 playIds <- unique(data$playId)
 set.seed(134)
-w <- sample(1:length(playIds), 200)
+w <- sample(1:length(playIds), 1000)
 data <- data[which(data$playId %in% playIds[w]), ] # smaller data set
 
 # Model fitting -----------------------------------------------------------
@@ -253,21 +252,21 @@ dist_mat <- sapply(1:nrow(pairs), function(k) {
 # Name the columns
 colnames(dist_mat) <- paste0("dist_y_", pairs$i, "_", pairs$j)
 
-head(dist_mat)
+# head(dist_mat)
 
 
 
 # Model fitting -----------------------------------------------------------
 
-dat = list(y_pos = data$y,
-           X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + n_att + 1:n_att]),
-           dist_mat = dist_mat,
-           ID = data$uniId,
-           n_att = n_att, 
-           Delta = as.matrix(Deltas))
-
-par = list(beta = c(-4, 0),  # transition prob coefficients
-           logsigma = log(1))
+# dat = list(y_pos = data$y,
+#            X = as.matrix(data[, which(str_detect(names(data),"player"))[1]-1 + n_att + 1:n_att]),
+#            dist_mat = dist_mat,
+#            ID = data$uniId,
+#            n_att = n_att, 
+#            Delta = as.matrix(Deltas))
+# 
+# par = list(beta = c(-4, 0),  # transition prob coefficients
+#            logsigma = log(1))
 
 tpm_g3 <- function(Eta, byrow = FALSE) {
   K <- ncol(Eta)
@@ -298,25 +297,25 @@ tpm_g3 <- function(Eta, byrow = FALSE) {
   Gamma
 }
 
-nll <- function(par){
-  getAll(par, dat)
-  
-  Gamma <- tpm_g3(beta[1] + beta[2] * dist_mat); REPORT(beta)
-  
-  sigma <- exp(logsigma)
-  
-  Mu = X
-  REPORT(Mu)
-  REPORT(alpha)
-  
-  allprobs = matrix(1, length(y_pos), n_att)
-  ind = which(!is.na(y_pos))
-  for(j in 1:n_att){
-    allprobs[ind,j] = dnorm(y_pos, Mu[,j], sigma)
-  }
-  
-  -forward_g(Delta, Gamma, allprobs, trackID = ID)
-}
+# nll <- function(par){
+#   getAll(par, dat)
+#   
+#   Gamma <- tpm_g3(beta[1] + beta[2] * dist_mat); REPORT(beta)
+#   
+#   sigma <- exp(logsigma)
+#   
+#   Mu = X
+#   REPORT(Mu)
+#   REPORT(alpha)
+#   
+#   allprobs = matrix(1, length(y_pos), n_att)
+#   ind = which(!is.na(y_pos))
+#   for(j in 1:n_att){
+#     allprobs[ind,j] = dnorm(y_pos, Mu[,j], sigma)
+#   }
+#   
+#   -forward_g(Delta, Gamma, allprobs, trackID = ID)
+# }
 
 # # all off-diagonal probablities are the same
 # map = list(eta = factor(rep(1, n_att * (n_att - 1))))
@@ -498,34 +497,31 @@ par = list(beta0 = -5,
 jnll = function(par){
   getAll(par, dat)
   
+  REPORT(beta0); REPORT(beta_dist); REPORT(beta_club); REPORT(beta_pos)
+  
   # linear predictor
   Eta <- beta0 + beta_dist * dist_mat + # distance
     beta_club[club_num] + beta_pos[pos_num] # random effects
-  Gamma <- tpm_g3(Eta); REPORT(beta)
-  
-  REPORT(Gamma)
-  REPORT(beta_club)
-  REPORT(beta_pos)
+  Gamma <- tpm_g3(Eta); # REPORT(beta)
   
   sigma <- exp(logsigma); REPORT(sigma)
   sigma_club <- exp(logsigma_club); REPORT(sigma_club)
   sigma_pos <- exp(logsigma_pos); REPORT(sigma_pos)
   
+  # Matrix of state-dependent densities
   allprobs <- matrix(1, length(y_pos), n_att)
   ind <- which(!is.na(y_pos))
   for(j in 1:n_att){
     allprobs[ind,j] = dnorm(y_pos, X[,j], sigma)
   }
   
-  nll <- -forward_g(Delta, Gamma[,,club_num], allprobs,
-                    trackID = ID, report = FALSE)
+  # HMM likelihood
+  nll <- -forward_g(Delta, Gamma, allprobs, trackID = ID)
   
-  REPORT(allprobs)
-  
-  # club random effect likelihood
+  # Club random effect likelihood
   nll <- nll - sum(dnorm(beta_club, 0, sigma_club, log = TRUE))
   
-  # pos random effect likelihood
+  # Position random effect likelihood
   nll <- nll - sum(dnorm(beta_pos, 0, sigma_pos, log = TRUE))
   
   nll
@@ -546,40 +542,43 @@ system.time(
 )
 
 mod2 <- obj2$report()
-
 sdr <- sdreport(obj2)
+mod2$sdr <- sdr
 
-saveRDS(mod2, "./results/mod200_w_dist.rds")
+saveRDS(mod2, "./results/mod_1000plays_w_dist_full.rds")
 
 
 # saveRDS(mod2, "./results/mod_full.rds")
 # saveRDS(mod2, "./results/mod_w5to9.rds")
 
-mod_full <- readRDS("./results/mod_full.rds")
+# mod_full <- readRDS("./results/mod_full.rds")
 
+mod_full <- readRDS("./results/mod_1000plays_w_dist_full.rds")
+
+stateprobs_mat <- stateprobs_g(dat$Delta, mod_full$Gamma, mod_full$allprobs, dat$ID)
 
 # state decoding
 
-stateprobs <- list()
+# stateprobs <- list()
 
-uID <- unique(dat$ID)
-i <- 1
-for(id in uID){
-  idx <- which(dat$ID == id)
-  club_i <- dat$club_num[idx[1]]
-  pos_i <- dat$pos_num[idx[1]]
-  
-  stateprobs[[i]] <- stateprobs(dat$Delta[i, ], mod_full$Gamma[,, club_i, pos_i], mod_full$allprobs[idx, ])
-  i <- i + 1
-}
+# uID <- unique(dat$ID)
+# i <- 1
+# for(id in uID){
+#   idx <- which(dat$ID == id)
+#   club_i <- dat$club_num[idx[1]]
+#   pos_i <- dat$pos_num[idx[1]]
+#   
+#   stateprobs[[i]] <- stateprobs(dat$Delta[i, ], mod_full$Gamma[,, club_i, pos_i], mod_full$allprobs[idx, ])
+#   i <- i + 1
+# }
 
 # turn into matrix
-stateprobs_mat <- do.call(rbind, stateprobs)
+# stateprobs_mat <- do.call(rbind, stateprobs)
 colnames(stateprobs_mat) <- paste0("attacker_", 1:n_att)
 stateprobs_df <- as.data.frame(stateprobs_mat)
 
-saveRDS(stateprobs_df, "./results/stateprobs_full.rds")
-saveRDS(stateprobs_mat, "./results/stateprobs_full_mat.rds")
+saveRDS(stateprobs_df, "./results/stateprobs_1000plays_w_dist.rds")
+# saveRDS(stateprobs_mat, "./results/stateprobs_full_mat.rds")
 
 
 
