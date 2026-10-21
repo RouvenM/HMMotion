@@ -4,10 +4,20 @@
 ######################################################################################
 ######################################################################################
 
+library(dplyr)
+library(stringr)
+library(here)
 library(comets)
 library(xgboost)
 library(coin)
-#library(comets)
+
+# Two kinds of tests, Z = pre-motion + naive post-motion features:
+# 1. "partial": omnibus Y _||_ X | Z for all four HMM features X, and for each
+#    feature Y _||_ X_j | (Z, X_-j), i.e. given the other HMM features too
+#    -> results/gcm_partial.rds (left panel of the GCM figure)
+# 2. "marginal": for each feature Y _||_ X_j | Z, other HMM features excluded;
+#    with the unnormalised statistic and its sd for the partially linear
+#    logistic model interpretation -> results/gcm_marginal.rds (right panel)
 
 
 test_zvm_features <- function(model_data,
@@ -24,7 +34,7 @@ test_zvm_features <- function(model_data,
 } 
 
 
-full_data <- readRDS("preprocessed_HMM_data_full_final.rds")
+full_data <- readRDS(here("results", "preprocessed_HMM_data_full.rds"))
 #full_data <- readRDS("~/zvm_models/preprocessed_HMM_data_full_final.rds")
 
 ######################
@@ -38,8 +48,8 @@ quarter_seconds <- function(timestr){
   })
 }
 
-games = read.csv("games.csv")
-plays = read.csv("plays.csv") |>
+games = read.csv(here("rawdata", "games.csv"))
+plays = read.csv(here("rawdata", "plays.csv")) |>
   mutate(gameplayId = as.numeric(paste0(gameId, playId)))
 
 fm_add <- full_data |>
@@ -63,7 +73,8 @@ ffs <- model_data_full |>
 
 
 ####################
-#### small model tests (i.e. exclude orientation and dist_fb)
+#### 1. partial tests: each HMM feature given Z and the other HMM features
+####    (small models, i.e. exclude orientation and dist_fb)
 ####################
 
 set.seed(123)
@@ -154,11 +165,11 @@ pvals_tbl_s_2 <- data.frame(predictor = c("average entropy","# player changes","
                              sds = c(sds,NA))
 
 #saveRDS(pvals_tbl_s,"pvals_hmm_features_s_020525.rds") ### s stands for small models (w/o or and dist_fb) but all hmm features in each model!
-saveRDS(pvals_tbl_s_2,"pvals_hmm_features_s_140126.rds") ### s stands for small models (w/o or and dist_fb) but all hmm features in each model!
+saveRDS(pvals_tbl_s_2, here("results", "gcm_partial.rds")) ### s stands for small models (w/o or and dist_fb) but all hmm features in each model!
   
 
 ####################
-#### small model single variable tests
+#### 2. marginal tests: each HMM feature given Z only (other HMM features excluded)
 ####################
 
 set.seed(123)
@@ -233,4 +244,4 @@ pvals_tbl_s1_2 <- data.frame(predictor = c("average entropy","# player changes",
 
 #saveRDS(pvals_tbl_s1,"pvals_hmm_features_s1_020525.rds") ### s1 stands for small models (w/o or and dist_fb) and one hmm variable only in the model
 #saveRDS(pvals_tbl_s1_2,"pvals_hmm_features_s1_100725.rds") ### s1 stands for small models (w/o or and dist_fb) and one hmm variable only in the model
-saveRDS(pvals_tbl_s1_2,"pvals_hmm_features_s1_140126.rds") ### s1 stands for small models (w/o or and dist_fb) and one hmm variable only in the model
+saveRDS(pvals_tbl_s1_2, here("results", "gcm_marginal.rds")) ### s1 stands for small models (w/o or and dist_fb) and one hmm variable only in the model

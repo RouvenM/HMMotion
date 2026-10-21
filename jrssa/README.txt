@@ -31,10 +31,25 @@ Run the scripts in this order:
 
 5. 05_zvm_team_analyses.R
    Leave-one-team-out comparison of the pre-motion and HMM post-motion models.
-   Writes results/teams_zvm.rds.
+   Writes results/teams_zvm.rds, team_tab.rds, team_diffs.pdf, team_table.pdf.
+
+6. 06_gcm_tests.R
+   GCM conditional independence tests of the HMM features (package comets),
+   Z = pre-motion + naive post-motion features:
+   - partial: omnibus Y _||_ X | Z and each Y _||_ X_j | (Z, X_-j)
+     -> results/gcm_partial.rds
+   - marginal: each Y _||_ X_j | Z, with unnormalised statistic and sd
+     -> results/gcm_marginal.rds
+   fig_gcm.R draws both panels of the GCM figure from these files.
 
 zvm_models.R is the shared model-fitting function sourced by 04 and 05.
 fig_HMM_expl.R draws the HMM illustration (figure HMM_expl).
+
+Note on cross-fitting: the AoAS figure came from cross_fitting_zvm_cluster.R
+(sequential, 50 repetitions, XGBoost grid over eta x depth x colsample_bytree
+x gamma = 120 combinations). 04 replaces it with run_models_crossfit(): same
+5-fold scheme and feature sets, parallel, 10 repetitions, and a grid over eta
+and depth only (as described in the paper).
 
 Changes relative to the versions used for the AoAS submission
 -------------------------------------------------------------
@@ -64,3 +79,5 @@ Changes relative to the versions used for the AoAS submission
 - 05: reads the final data and excludes the play random effect ("beta") from
   the pre-motion model.
 - zvm_models.R: random-forest branch referenced an undefined object.
+- 06: the paper described the marginal tests (right panel) with the partial
+  hypothesis Y _||_ X_j | (Z, X_-j); the code conditions on Z only there.

@@ -7,8 +7,10 @@
 
 library(tidyverse)
 library(ggpubr)
+library(here)
 
-sig_df <- readRDS("pvals_hmm_features_s_140126.rds")
+# left panel: partial tests (omnibus and each feature given Z and the other HMM features)
+sig_df <- readRDS(here("results", "gcm_partial.rds"))
 sig_df$predictor[4] <- "Per play RE"
 
 
@@ -33,7 +35,8 @@ p1 <- sig_df |>
   theme(text = element_text(size = 13.5), legend.position="top",
         axis.text.x = element_text(angle = 20, vjust = 0.9,hjust = 1))
 
-sig_df2 <- readRDS("pvals_hmm_features_s1_140126.rds")
+# right panel: marginal tests (each feature given Z only)
+sig_df2 <- readRDS(here("results", "gcm_marginal.rds"))
 
 sig_df2$predictor[4] <- "Per play RE"
 

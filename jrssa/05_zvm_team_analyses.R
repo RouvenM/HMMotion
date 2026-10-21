@@ -1,9 +1,18 @@
 
 
 
+# Libraries ---------------------------------------------------------------
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(here)
+source(here("jrssa", "zvm_models.R"))
+
 # Load data ---------------------------------------------------------------
 
-full_data <- readRDS("preprocessed_HMM_data_full_final.rds")
+full_data <- readRDS(here("results", "preprocessed_HMM_data_full.rds"))
 
 ######################
 ### clock manipulations
@@ -16,8 +25,8 @@ quarter_seconds <- function(timestr){
   })
 }
 
-games = read.csv("data/games.csv")
-plays = read.csv("data/plays.csv") |>
+games = read.csv(here("rawdata", "games.csv"))
+plays = read.csv(here("rawdata", "plays.csv")) |>
   mutate(gameplayId = as.numeric(paste0(gameId, playId)))
 
 fm_add <- full_data |>
@@ -112,12 +121,12 @@ for(team in teams){
 }
 
 #saveRDS(all_team_zvm,"data/teams_zvm_240925.rds")
-saveRDS(all_team_zvm,"data/teams_zvm_270126.rds")
+saveRDS(all_team_zvm, here("results", "teams_zvm.rds"))
 
 # Results and plots ---------------------------------------------------------------
 
 #all_team_zvm <- readRDS("data/teams_zvm_030125.rds")
-all_team_zvm <- readRDS("data/teams_zvm_270126.rds")
+all_team_zvm <- readRDS(here("results", "teams_zvm.rds"))
 
 accs <- data.frame(teams = names(all_team_zvm),
                    pre_acc = sapply(all_team_zvm,\(x){x$pre_model$acc}),
@@ -190,7 +199,7 @@ diff_tab |>
   theme(axis.text.x = element_nfl_logo(size = 0.75))
 
 library(Cairo)
-ggsave("team_diffs.pdf", height = 6, width = 12, scale = 0.9,device = cairo_pdf)
+ggsave(here("results", "team_diffs.pdf"), height = 6, width = 12, scale = 0.9,device = cairo_pdf)
 
 diff_info_l <- lapply(all_team_zvm,\(x){
   zt <- x$zone_table |>
@@ -257,7 +266,7 @@ team_info <- data.frame(team = names(diff_info_l),
   rename(url = team_logo_wikipedia)
 
 #saveRDS(team_info,"team_tab_240925.rds")
-saveRDS(team_info,"team_tab_270126.rds")
+saveRDS(team_info, here("results", "team_tab.rds"))
 
 library(reactable)
 library(reactablefmtr)
@@ -393,8 +402,8 @@ fmt_number(
 
 
 gt_tbl |> 
-  gtsave("gt_tab.html")
+  gtsave(here("results", "gt_tab.html"))
 
-gtsave(gt_tbl, "team_table.pdf")
+gtsave(gt_tbl, here("results", "team_table.pdf"))
 
 
