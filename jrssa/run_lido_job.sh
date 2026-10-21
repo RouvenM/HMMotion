@@ -1,13 +1,16 @@
 #!/bin/bash -l
-#SBATCH --job-name=my_big_R_job
-#SBATCH --partition=ultralong            # oder long / ultralong je nach Bedarf
-#SBATCH --time=10-00:00:00              # Laufzeitlimit (2 Stunden Test)
-#SBATCH --mem=200G                    # Arbeitsspeicherbedarf für Testlauf
-#SBATCH --cpus-per-task=1            # Anzahl CPU-Kerne
-#SBATCH --output=/work/mroumich/my_big_R_job.out.txt   # <--- hier liegt der Unterschied!
+# HMM fit (02_HMM_model_fitting_server.R). Submit with: sbatch jrssa/run_lido_job.sh
+#SBATCH --job-name=hmmotion_hmm
+#SBATCH --partition=ultralong
+#SBATCH --time=10-00:00:00
+#SBATCH --mem=200G
+#SBATCH --cpus-per-task=1
+#SBATCH --output=/work/mroumich/hmmotion_hmm_%j.out
 
-cd /work/mroumich                # <--- hier das Arbeitsverzeichnis setzen!
+# Project root on LiDO: must contain BDB-2025.Rproj, jrssa/, rawdata/ and results/
+PROJECT_DIR=/work/mroumich/HMMotion_Claude
 
-module load R/4.4.2-gcc141-base      # lädt R-Modul des Clusters
+cd "$PROJECT_DIR"
+module load R/4.4.2-gcc141-base
 
-Rscript /work/mroumich/HMM3.R  # führt dein eigenes Skript aus
+Rscript jrssa/02_HMM_model_fitting_server.R

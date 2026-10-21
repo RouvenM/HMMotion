@@ -596,11 +596,15 @@ run_models_crossfit <- function(seedu, model_data_full, K = 5){
 
 library(parallel)
 
-nsim <- 50
+# Each repetition yields out-of-sample predictions for all plays, so 10
+# repetitions of 5-fold cross-fitting (50 fits per model) suffice
+nsim <- 10
 seeds <- round(seq(1, 1000, length.out = nsim))
 
 # Cluster mit Anzahl der Kerne erstellen
-cl <- makeCluster(detectCores()-2)   # alle verfügbaren Kerne
+# use the cores SLURM allocated (detectCores() returns all cores of the node)
+n_cores <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", detectCores() - 1))
+cl <- makeCluster(n_cores)
 
 # Optional: benötigte Funktionen/Objekte exportieren
 clusterExport(cl, c("run_models_crossfit", "zvm_models", "seeds", "model_data_full"))
@@ -628,7 +632,7 @@ saveRDS(results_list, here("results", "zvm_crossfit_runs.rds"))
 weeks <- sort(unique(play_week))
 
 # Cluster erstellen
-cl <- makeCluster(detectCores())
+cl <- makeCluster(n_cores)
 
 # Notwendige Objekte/Funktionen exportieren
 clusterExport(cl, c("run_models_small_lowo", "zvm_models", "model_data_full", "play_week", "weeks"))

@@ -1,13 +1,16 @@
 #!/bin/bash -l
-#SBATCH --job-name=R_parallel_job
-#SBATCH --output=/work/mroumich/R_parallel_%j.out
-#SBATCH --partition=med           # oder ultralong bei großen Läufen
-#SBATCH --time=08:00:00          # Laufzeitlimit (z.B. 2 Tage)
-#SBATCH --mem=30G                 # Arbeitsspeicherbedarf (~150 GB)
-#SBATCH --cpus-per-task=10          # Anzahl paralleler Kerne!
+# Coverage models (04_zvm_cv_runs.R). Submit with: sbatch jrssa/run_lido_parallel.sh
+#SBATCH --job-name=hmmotion_zvm
+#SBATCH --partition=long
+#SBATCH --time=2-00:00:00
+#SBATCH --mem=30G
+#SBATCH --cpus-per-task=10            # = number of repetitions run in parallel (nsim = 10)
+#SBATCH --output=/work/mroumich/hmmotion_zvm_%j.out
 
+# Project root on LiDO: must contain BDB-2025.Rproj, jrssa/, rawdata/ and results/
+PROJECT_DIR=/work/mroumich/HMMotion_Claude
+
+cd "$PROJECT_DIR"
 module load R/4.4.2-gcc141-base
 
-cd /work/mroumich/          # Arbeitsverzeichnis setzen
-
-Rscript zvm.R              # führt dein Skript aus
+Rscript jrssa/04_zvm_cv_runs.R

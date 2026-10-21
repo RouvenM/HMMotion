@@ -514,6 +514,21 @@ par = list(beta0 = -5,
            logsigma_pos = log(0.2),
            logsigma_play = log(0.1))
 
+# Warm start: if an earlier fit is saved as results/mod_start.rds (e.g. a
+# previous mod_final_full.rds), start from its fixed-effect estimates, which
+# cuts the number of outer iterations
+start_file <- here("results", "mod_start.rds")
+if(file.exists(start_file)){
+  mod_start <- readRDS(start_file)
+  par$beta0 <- as.numeric(mod_start$beta0)
+  par$beta_dist <- as.numeric(mod_start$beta_dist)
+  par$logsigma <- log(as.numeric(mod_start$sigma))
+  par$logsigma_club <- log(as.numeric(mod_start$sigma_club))
+  par$logsigma_pos <- log(as.numeric(mod_start$sigma_pos))
+  par$logsigma_play <- log(as.numeric(mod_start$sigma_play))
+  rm(mod_start)
+}
+
 jnll = function(par){
   getAll(par, dat)
   

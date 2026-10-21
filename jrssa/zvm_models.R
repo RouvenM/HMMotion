@@ -19,6 +19,7 @@ zvm_models <- function(model_data,
                        param_grid = NULL,
                        seed = 123,
                        return_preds = FALSE,
+                       nthread = 1,
                        ...){
   dta <- model_data |>
     select(-gameId,-playId,
@@ -69,8 +70,10 @@ zvm_models <- function(model_data,
     
     if(full_cv){
       if(is.null(param_grid)){
-        param_grid <- expand_grid(eta = c(0.01,0.05,0.1,0.3,0.5,1),
-                                  max_depth = c(1,3,5,10))
+        # eta 0.01 needs very many rounds and eta >= 0.5 / depth 10 overfit
+        # on ~3,000 training plays; this grid keeps the useful region
+        param_grid <- expand_grid(eta = c(0.05,0.1,0.3),
+                                  max_depth = c(1,3,5))
       }
       xgb_list <- list()
       set.seed(seed)
@@ -79,7 +82,8 @@ zvm_models <- function(model_data,
                        objective = "binary:logistic",
                        eta = param_grid[i,1],
                        max_depth = param_grid[i,2],
-                       colsample_bynode = 0.3)
+                       colsample_bynode = 0.3,
+                       nthread = nthread)
         xgb_list[[i]] <- xgb.cv(params = params,data = xgb_mat,
                                 nfold = 5,showsd = T, nrounds = 1500,
                                 print_every_n = 100,early_stopping_rounds = 15,...)
@@ -94,6 +98,7 @@ zvm_models <- function(model_data,
       nr <- xgb_list[[bpi]]$best_iteration
       modu <- xgboost(xgb_mat, max_depth = param_grid[bpi,2], eta = param_grid[bpi,1],
                       nrounds = nr, gamma = 0.5,colsample_bynode = 0.3, objective = "binary:logistic",
+                      nthread = nthread,
                       ...)
     }else{
       modu <- xgboost(xgb_mat,
