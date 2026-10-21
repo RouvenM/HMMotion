@@ -35,13 +35,13 @@ pre_process <- function(tracking_data){
     mutate(x = x - 120/2) %>%  # center x-coordinate  
     mutate(displayName_fac = factor(displayName, levels = unique(displayName))) %>% 
     mutate(playId_fac = factor(playId, levels = unique(playId))) %>% 
-    group_by(displayName_fac, playId_fac) %>% #use group split to stay with the order
+    group_by(uniId) %>% #use group split to stay with the order
     group_split() %>% 
     # Take out the time where teams are in the huddle, i.e. before first line up
     map(~mutate(., initial_y = y[which(event == "line_set")[1]])) %>% 
     map(~mutate(., initial_x = x[which(event == "line_set")[1]])) %>% 
     bind_rows() %>% 
-    group_by(playId_fac) %>% 
+    group_by(game_play_id) %>% 
     group_split() %>% 
     map(~filter(.,frameId >= frameId[which(event == "line_set")[1]])) %>% 
     bind_rows() %>% 
@@ -326,12 +326,12 @@ tracking_presnap1 = tracking %>%
   #mutate(game_play_id = paste0(gameId, playId)) %>% 
   mutate(displayName_fac = factor(displayName, levels = unique(displayName))) %>% 
   mutate(playId_fac = factor(playId, levels = unique(playId))) %>% 
-  group_by(displayName_fac, playId_fac) %>% #use group split to stay with the order
+  group_by(uniId) %>% #use group split to stay with the order
   group_split() %>% 
   # Take out the time where teams are in the huddle, i.e. before first line up
   map(~mutate(., initial_y = y[which(event == "line_set")[1]])) %>% 
   bind_rows() %>% 
-  group_by(playId_fac) %>% 
+  group_by(gameplayId) %>% 
   group_split() %>% 
   map(~filter(.,frameId >= frameId[which(event == "line_set")[1]])) %>% 
   bind_rows() %>% 
@@ -542,11 +542,11 @@ tracking_presnap1 = tracking %>%
   #mutate(y = y - 53.3/2) %>% # center y-coordinate ## already done before
   mutate(displayName_fac = factor(displayName, levels = unique(displayName))) %>% 
   mutate(playId_fac = factor(playId, levels = unique(playId))) %>% 
-  group_by(displayName_fac, playId_fac) %>% #use group split to stay with the order
+  group_by(nflId, gameplayId) %>% #use group split to stay with the order
   group_split() %>% 
   map(~mutate(., initial_y = y[which(event == "line_set")[1]])) %>% 
   bind_rows() %>% 
-  group_by(playId_fac) %>% 
+  group_by(gameplayId) %>% 
   group_split() %>% 
   map(~filter(.,frameId >= frameId[which(event == "line_set")[1]])) %>% 
   bind_rows() %>% 
