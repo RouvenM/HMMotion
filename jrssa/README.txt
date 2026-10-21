@@ -38,10 +38,11 @@ fig_HMM_expl.R draws the HMM illustration (figure HMM_expl).
 
 Changes relative to the versions used for the AoAS submission
 -------------------------------------------------------------
-- 01: frames are now grouped by game and play. Before, grouping by playId alone
-  pooled plays with the same playId from different games of a week, so the
-  start frame (line_set) could come from another game: 9.3% of plays kept
-  huddle frames before line_set (median 1.9 s), others may have lost frames.
+- 01: the start frame (first line_set) is now determined per game and play.
+  Before, grouping by playId alone pooled plays with the same playId from
+  different games of a week (6% of plays), so their start frame could come
+  from another game: about half of them kept huddle frames, the others may
+  have lost frames. The first grouping (player x playId) was already unique.
 - 01: the deepest non-CB defenders are now removed by depth to the line of
   scrimmage. Before, the smallest centred x was used, which only picks the
   deepest player for plays going left; for plays going right it removed the
