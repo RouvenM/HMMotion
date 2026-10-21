@@ -495,12 +495,14 @@ dat = list(y_pos = data$y,
            play_num = data$play_num)
 
 # Initialising random coefficients with nice names
+# Names must follow the factor levels, because pos_num, club_num and play_num
+# index by level (alphabetical), not by order of appearance as unique() would.
 beta_pos0 = rep(0, n_pos)
-names(beta_pos0) <- unique(data$pos)
+names(beta_pos0) <- levels(data$pos)
 beta_club0 = rep(0, n_clubs)
-names(beta_club0) <- unique(data$club)
+names(beta_club0) <- levels(data$club)
 beta_play0 = rep(0, length(unique(data$play_num)))
-names(beta_play0) <- unique(data$game_play_id)
+names(beta_play0) <- levels(as.factor(data$game_play_id))
 
 par = list(beta0 = -5,
            beta_dist = 0,
@@ -571,7 +573,7 @@ mod <- obj$report()
 sdr <- sdreport(obj)
 mod$sdr <- sdr
 
-saveRDS(mod, "mod_final_full.rds")
+saveRDS(mod, here("results", "mod_final_full.rds"))
 
 gc()
 #stateprobs <- stateprobs_g(mod = mod)

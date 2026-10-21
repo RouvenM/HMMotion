@@ -1,9 +1,18 @@
 
 
 
+# Libraries ---------------------------------------------------------------
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(here)
+source(here("jrssa", "zvm_models.R"))
+
 # Load data ---------------------------------------------------------------
 
-full_data <- readRDS("data/preprocessed_HMM_data.rds")
+full_data <- readRDS(here("results", "preprocessed_HMM_data_full.rds"))
 
 ######################
 ### clock manipulations
@@ -16,8 +25,8 @@ quarter_seconds <- function(timestr){
   })
 }
 
-games = read.csv("data/games.csv")
-plays = read.csv("data/plays.csv") |>
+games = read.csv(here("rawdata", "games.csv"))
+plays = read.csv(here("rawdata", "plays.csv")) |>
   mutate(gameplayId = as.numeric(paste0(gameId, playId)))
 
 fm_add <- full_data |>
@@ -59,7 +68,7 @@ for(team in teams){
   
   Team_xy_npo <- zvm_models(NTeam_plays,Team_plays,
                             ml_type = "xgboost",
-                            excl_vars = c("average","sum","nr_player_changes","average_ent",
+                            excl_vars = c("beta","average","sum","nr_player_changes","average_ent",
                                           names(model_data_full)[grep("dist_fb",names(model_data_full))],
                                           names(model_data_full)[grep("def_o_qb_diff",names(model_data_full))],
                                           max_x_o,max_y_o,tot_dist_o,
@@ -111,11 +120,11 @@ for(team in teams){
                                man_improvement = table(Team_man$improvement))
 }
 
-saveRDS(all_team_zvm,"data/teams_zvm_240925.rds")
+saveRDS(all_team_zvm, here("results", "teams_zvm.rds"))
 
 # Results and plots ---------------------------------------------------------------
 
-all_team_zvm <- readRDS("data/teams_zvm_030125.rds")
+all_team_zvm <- readRDS(here("results", "teams_zvm.rds"))
 
 accs <- data.frame(teams = names(all_team_zvm),
                    pre_acc = sapply(all_team_zvm,\(x){x$pre_model$acc}),

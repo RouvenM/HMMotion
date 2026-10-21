@@ -1,7 +1,51 @@
-1. We preprocess the data for the ML and the HMM fits in "final_data_preprocessing_for_HMM_and_ML"
+HMMotion pipeline for the JRSS-A resubmission
+=============================================
 
-2. We fit the HMM model in "HMM_model_fitting.R"
+All paths are resolved with here() relative to the project root (the folder
+containing BDB-2025.Rproj). Expected layout:
 
-3. We load the premotion, naive-post Motion and HMM Features in "create_data_HMM.R"
+  rawdata/   tracking_week_1..9.csv, plays.csv, players.csv, games.csv
+  results/   created by you (git-ignored); all fitted models and outputs go here
 
-4. We fit the ML models in "zvm_cv_runs_new.R"
+Run the scripts in this order:
+
+1. 01_preprocessing.R
+   Preprocessing for the HMM and the supervised models. Writes per week to rawdata/:
+   final_preprocessed_week_<w>_lag4.csv (HMM input), week<w>_y_ord_od.rds
+   (pre-motion features), week_<w>_dist_adder.rds (naive post-motion features).
+
+2. 02_HMM_model_fitting_server.R  (run on LiDO, see run_lido_job.sh)
+   Final non-homogeneous HMM with distance covariate and team/position/play
+   random effects. Writes results/mod_final_full.rds.
+   (02b_HMM_model_fitting_exploratory.R: earlier homogeneous / team+position models.)
+
+3. 03_create_data_HMM.R
+   Decodes the HMM, builds the HMM features and joins all feature sets.
+   Writes results/preprocessed_HMM_data_full.rds.
+
+4. 04_zvm_cv_runs.R  (run on LiDO, see run_lido_parallel.sh)
+   Coverage models (elastic net, XGBoost): 50 repetitions of 5-fold cross-fitting
+   -> results/zvm_crossfit_runs.rds; leave-one-week-out CV -> results/zvm_lowo_runs.rds.
+
+5. 05_zvm_team_analyses.R
+   Leave-one-team-out comparison of the pre-motion and HMM post-motion models.
+   Writes results/teams_zvm.rds.
+
+zvm_models.R is the shared model-fitting function sourced by 04 and 05.
+fig_HMM_expl.R draws the HMM illustration (figure HMM_expl).
+
+Changes relative to the versions used for the AoAS submission
+-------------------------------------------------------------
+- 01: the deepest non-CB defenders are now removed by depth to the line of
+  scrimmage. Before, the smallest centred x was used, which only picks the
+  deepest player for plays going left; for plays going right it removed the
+  defender closest to the line and kept deep safeties.
+- 02: random-effect names now follow the factor levels used for indexing.
+  Before, names came from unique() (order of appearance), so position and team
+  effects were mislabelled and 44 play effects were attached to the wrong play.
+- 04: train/test splits are seeded; 5-fold cross-fitting as described in the
+  paper; leave-one-week-out uses the real week and the right function; the
+  full run_models() reported glmnet instead of XGBoost for "af_ex_hmm".
+- 05: reads the final data and excludes the play random effect ("beta") from
+  the pre-motion model.
+- zvm_models.R: random-forest branch referenced an undefined object.

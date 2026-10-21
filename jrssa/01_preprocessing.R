@@ -19,15 +19,12 @@ players = read.csv(here("rawdata", "players.csv"))
 plays = read.csv(here("rawdata","plays.csv"))
 plays = plays |> filter(pff_manZone != "Other")
 
-setwd("C:/Users/michels/sciebo/BDB 2025/rawdata")
-
-tracking = vroom("tracking_week_1.csv")
+# Tracking files are read from <project root>/rawdata via here()
 nweeks = 9 # only 3 weeks for data size
 for(jj in 1:nweeks){
   print(jj)
   #tracking = rbind(tracking, vroom(paste0("tracking_week_", i, ".csv")))
-  setwd("C:/Users/michels/sciebo/BDB 2025/rawdata")
-  tracking = vroom(paste0("tracking_week_", jj, ".csv"))
+  tracking = vroom(here("rawdata", paste0("tracking_week_", jj, ".csv")))
   
 pre_process <- function(tracking_data){
   
@@ -218,6 +215,11 @@ plays = plays %>%
 n_att = 5
 
 # Now filter out the most behind players (safeties)
+# Depth = distance to the line of scrimmage at line_set. x is only centred
+# (x - 60), not mirrored by playDirection, so the deepest defender is not the
+# one with the smallest x for plays going right.
+data = data |> mutate(depth = abs(initial_x - (absoluteYardlineNumber - 60)))
+
 data |> filter(event == "line_set") |> group_by(game_play_id) |>
   summarise(count = n()) |> filter(count == 6) |> pull(game_play_id) -> ids_6
 
@@ -230,14 +232,14 @@ data |> filter(event == "line_set") |> group_by(game_play_id) |>
 data %>%
   filter(event == "line_set", game_play_id %in% c(ids_6), position != "CB") %>%
   group_by(game_play_id) %>%
-  slice_min(order_by = initial_x, n = 1, with_ties = FALSE) %>%
+  slice_max(order_by = depth, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
   pull(uniId) -> get_out_6
 
 data %>%
   filter(event == "line_set", game_play_id %in% c(ids_7), position != "CB") %>%
   group_by(game_play_id) %>%
-  slice_min(order_by = initial_x, n = 2, with_ties = FALSE) %>%
+  slice_max(order_by = depth, n = 2, with_ties = FALSE) %>%
   ungroup() %>%
   pull(uniId) -> get_out_7
 
@@ -245,12 +247,13 @@ data %>%
 data %>%
   filter(event == "line_set", game_play_id %in% c(ids_8), position != "CB") %>%
   group_by(game_play_id) %>%
-  slice_min(order_by = initial_x, n = 3, with_ties = FALSE) %>%
+  slice_max(order_by = depth, n = 3, with_ties = FALSE) %>%
   ungroup() %>%
   pull(uniId) -> get_out_8
 
 data = data |> filter(!(uniId %in% get_out_6)) |> filter(!(uniId %in% get_out_7)) |> 
-  filter(!(uniId %in% get_out_8))
+  filter(!(uniId %in% get_out_8)) |> 
+  select(-depth)
 
 max_lag = 5
 
@@ -511,8 +514,7 @@ rm(tracking)
 gc()
 
 # Post motion features ----------------------------------------------------
-setwd("C:/Users/michels/sciebo/BDB 2025/rawdata")
-tracking = vroom(paste0("tracking_week_", jj, ".csv"))
+tracking = vroom(here("rawdata", paste0("tracking_week_", jj, ".csv")))
 
 tracking = tracking %>% 
   mutate(gameplayid = paste0(gameId, playId)) |> 

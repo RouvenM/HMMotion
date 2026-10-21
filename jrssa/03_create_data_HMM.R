@@ -159,4 +159,4 @@ full_data <- premotion_data |> #select(-nflId_football) |>
   drop_na()
 
 
-saveRDS(full_data,"preprocessed_HMM_data_full_final.rds")
+saveRDS(full_data, here("results", "preprocessed_HMM_data_full.rds"))
