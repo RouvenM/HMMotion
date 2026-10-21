@@ -1,18 +1,9 @@
 
 
 
-# Libraries ---------------------------------------------------------------
-
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(ggplot2)
-library(here)
-source(here("jrssa", "zvm_models.R"))
-
 # Load data ---------------------------------------------------------------
 
-full_data <- readRDS(here("results", "preprocessed_HMM_data_full.rds"))
+full_data <- readRDS("preprocessed_HMM_data_full_final.rds")
 
 ######################
 ### clock manipulations
@@ -25,8 +16,8 @@ quarter_seconds <- function(timestr){
   })
 }
 
-games = read.csv(here("rawdata", "games.csv"))
-plays = read.csv(here("rawdata", "plays.csv")) |>
+games = read.csv("data/games.csv")
+plays = read.csv("data/plays.csv") |>
   mutate(gameplayId = as.numeric(paste0(gameId, playId)))
 
 fm_add <- full_data |>
@@ -68,7 +59,7 @@ for(team in teams){
   
   Team_xy_npo <- zvm_models(NTeam_plays,Team_plays,
                             ml_type = "xgboost",
-                            excl_vars = c("beta","average","sum","nr_player_changes","average_ent",
+                            excl_vars = c("average","sum","nr_player_changes","average_ent","beta",
                                           names(model_data_full)[grep("dist_fb",names(model_data_full))],
                                           names(model_data_full)[grep("def_o_qb_diff",names(model_data_full))],
                                           max_x_o,max_y_o,tot_dist_o,
@@ -120,11 +111,13 @@ for(team in teams){
                                man_improvement = table(Team_man$improvement))
 }
 
-saveRDS(all_team_zvm, here("results", "teams_zvm.rds"))
+#saveRDS(all_team_zvm,"data/teams_zvm_240925.rds")
+saveRDS(all_team_zvm,"data/teams_zvm_270126.rds")
 
 # Results and plots ---------------------------------------------------------------
 
-all_team_zvm <- readRDS(here("results", "teams_zvm.rds"))
+#all_team_zvm <- readRDS("data/teams_zvm_030125.rds")
+all_team_zvm <- readRDS("data/teams_zvm_270126.rds")
 
 accs <- data.frame(teams = names(all_team_zvm),
                    pre_acc = sapply(all_team_zvm,\(x){x$pre_model$acc}),
@@ -196,6 +189,8 @@ diff_tab |>
        subtitle = "*NFL Teams*") +
   theme(axis.text.x = element_nfl_logo(size = 0.75))
 
+library(Cairo)
+ggsave("team_diffs.pdf", height = 6, width = 12, scale = 0.9,device = cairo_pdf)
 
 diff_info_l <- lapply(all_team_zvm,\(x){
   zt <- x$zone_table |>
@@ -229,7 +224,7 @@ up[order(up)]
 down <- sapply(diff_info_l,\(x){ x |> filter(diff < -0.2) |> nrow()})
 down[order(down)]
 
-teams <- nflreadr::load_teams(current = TRUE) %>%
+teams <- nflreadr::load_teams(current = TRUE) |>
   select(team_abbr, team_logo_wikipedia)
 
 team_motion = data.frame(team = names(diff_info_l),
@@ -261,7 +256,8 @@ team_info <- data.frame(team = names(diff_info_l),
   left_join(teams, by = join_by(team == team_abbr)) |>
   rename(url = team_logo_wikipedia)
 
-saveRDS(team_info,"team_tab_240925.rds")
+#saveRDS(team_info,"team_tab_240925.rds")
+saveRDS(team_info,"team_tab_270126.rds")
 
 library(reactable)
 library(reactablefmtr)
@@ -317,3 +313,88 @@ reactable(team_info |> select(url,n,n_improv,prop_improv),
           )
           
 )
+
+library(gt)
+library(gtExtras)
+
+team_gt <- team_info |>
+  mutate(
+    col1 = make_pal(n),
+    col2 = make_pal(n_improv),
+    col3 = make_pal(prop_improv)
+  ) |>
+  arrange(desc(prop_improv),
+          n)
+
+gt_tbl <- team_gt |>
+  slice_head(n = 10) |>
+  select(url, n, n_improv, prop_improv, col1, col2, col3) |>
+  gt() |>
+  
+cols_label(
+  url = "Team",
+  n = "# Motions",
+  # n_improv =
+  #   "# Plays with improved probability of predicting correct defensive scheme in post motion model",
+  n_improv =
+    "Improved plays (#)",
+  prop_improv =
+    "Improved plays (%)"
+) |>
+  
+text_transform(
+  locations = cells_body(url),
+  fn = function(x) {
+    web_image(
+      url = x,
+      height = px(25)
+    )
+  }
+) |>
+  
+  cols_align(
+    align = "center",
+    columns = url
+  ) |>
+  
+fmt_number(
+  columns = c(n, n_improv),
+  decimals = 0
+) |>
+  
+  fmt_number(
+    columns = prop_improv,
+    decimals = 3
+  ) |>
+  gt_color_box(n, domain = seq(min(team_gt$n),max(team_gt$n)+1,by =1),
+               palette = c("red","green")) |>
+  gt_color_box(n_improv, domain = seq(min(team_gt$n_improv),max(team_gt$n_improv)+1,by =1),
+               palette = c("red","green")) |>
+  gt_color_box(prop_improv, domain = seq(min(team_gt$prop_improv),max(team_gt$prop_improv)+0.01,by =0.01),
+               palette = c("red","green"),accuracy = 0.001) |>
+  cols_align(
+    align = "right",
+    columns = c(n, n_improv, prop_improv)
+  ) |>
+  cols_width(
+    url ~ px(70),
+    n ~ px(90),
+    everything() ~ px(90)
+  ) |>
+  
+  tab_options(
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.style = "solid"
+  ) |>
+  
+  # Hide helper columns
+  cols_hide(c(col1, col2, col3)) 
+
+
+gt_tbl |> 
+  gtsave("gt_tab.html")
+
+gtsave(gt_tbl, "team_table.pdf")
+
+
