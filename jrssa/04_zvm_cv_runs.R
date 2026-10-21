@@ -534,8 +534,14 @@ run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_
 # hyperparameters are tuned by the inner CV inside zvm_models().
 run_models_crossfit <- function(seedu, model_data_full, K = 5){
   
+  # load packages on the parallel workers, zvm_models() needs all of them
   library(dplyr)
+  library(tidyr)
   library(pROC)
+  library(glmnet)
+  library(glmnetUtils)
+  library(ranger)
+  library(xgboost)
   
   excl_base <- c(names(model_data_full)[grep("dist_fb",names(model_data_full))],
                  names(model_data_full)[grep("def_o_qb_diff",names(model_data_full))])

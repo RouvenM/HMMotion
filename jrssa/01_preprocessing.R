@@ -20,11 +20,18 @@ plays = read.csv(here("rawdata","plays.csv"))
 plays = plays |> filter(pff_manZone != "Other")
 
 # Tracking files are read from <project root>/rawdata via here()
-nweeks = 9 # only 3 weeks for data size
-for(jj in 1:nweeks){
+# Quick test: run options(hmmotion.test = TRUE) before sourcing this script to
+# process only the first 2 games of week 1 and write to results/test/
+TEST <- isTRUE(getOption("hmmotion.test", FALSE))
+weeks <- if(TEST) 1 else 1:9
+out_dir <- if(TEST) here("results", "test") else here("rawdata")
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+for(jj in weeks){
   print(jj)
   #tracking = rbind(tracking, vroom(paste0("tracking_week_", i, ".csv")))
   tracking = vroom(here("rawdata", paste0("tracking_week_", jj, ".csv")))
+  if(TEST) tracking = tracking |> filter(gameId %in% unique(gameId)[1:2])
   
 pre_process <- function(tracking_data){
   
@@ -620,12 +627,12 @@ tw_full = tw_full |> filter(gameplayId %in% dist_infos$gameplayId) |>
 dist_infos = dist_infos |> filter(gameplayId %in% tw_full$gameplayId) |> 
   filter(gameplayId %in% data$game_play_id)
 
-write.csv(data, here("rawdata", paste0("final_preprocessed_week_", jj, 
+write.csv(data, file.path(out_dir, paste0("final_preprocessed_week_", jj, 
                                        "_lag4.csv")), 
           row.names = FALSE)
 
-saveRDS(tw_full, here("rawdata", paste0("week", jj, "_y_ord_od.rds")))
+saveRDS(tw_full, file.path(out_dir, paste0("week", jj, "_y_ord_od.rds")))
 
-saveRDS(dist_infos, here("rawdata", paste0("week_", jj, "_dist_adder.rds")))
+saveRDS(dist_infos, file.path(out_dir, paste0("week_", jj, "_dist_adder.rds")))
 
 }
