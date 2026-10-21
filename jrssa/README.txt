@@ -40,13 +40,17 @@ Changes relative to the versions used for the AoAS submission
 -------------------------------------------------------------
 - 01: the start frame (first line_set) is now determined per game and play.
   Before, grouping by playId alone pooled plays with the same playId from
-  different games of a week (6% of plays), so their start frame could come
-  from another game: about half of them kept huddle frames, the others may
-  have lost frames. The first grouping (player x playId) was already unique.
+  different games of a week (about 36% of plays share a playId with another
+  game of the same week), so their start frame could come from another game:
+  some kept huddle frames, others lost frames or were dropped entirely.
+  Together with the defender fix, M grows from 3963 to 4344 plays.
+  The first grouping (player x playId) was already unique.
 - 01: the deepest non-CB defenders are now removed by depth to the line of
   scrimmage. Before, the smallest centred x was used, which only picks the
   deepest player for plays going left; for plays going right it removed the
   defender closest to the line and kept deep safeties.
+  Check after rerun (kept defenders, left vs right): deeper than 10 yd
+  1.2% vs 1.0% (before 1.3% vs 20.4%), FS+SS 10.1% vs 9.8% (before 9.9% vs 37.5%).
 - 02: random-effect names now follow the factor levels used for indexing.
   Before, names came from unique() (order of appearance), so position and team
   effects were mislabelled and 44 play effects were attached to the wrong play.
