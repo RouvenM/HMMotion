@@ -60,6 +60,7 @@ mod = readRDS(here("results", "mod_final_full.rds"))
 #mod = readRDS("mod_final_full.rds")
 
 probs = stateprobs_g(mod = mod)
+probs_mat = probs
 
 n_att = 5
 colnames(probs) = paste0("attacker_", 1:n_att)
@@ -112,13 +113,50 @@ results_df$playId = str_sub(rownames(results_df), 11, str_length(rownames(result
 #save(results_df, file = "HMM_features_lag_4.rds")
 #save(probs, file = "stateprobs_with_ids.rds")
 
-res_df = results_df %>% group_by(gameId, playId) %>% 
+# Argmax-based features (AoAS version), kept for a robustness check only
+res_df_argmax = results_df %>% group_by(gameId, playId) %>% 
   mutate(player_change = ifelse(num_changes > 0, 1, 0)) %>% 
   summarize(average = mean(num_changes),
             sum = sum(num_changes),
             nr_player_changes = sum(player_change), 
             average_sd = mean(sd),
             average_ent = mean(entropy)) |> 
+  mutate(game_play_id = as.numeric(paste0(gameId, playId)))
+
+saveRDS(res_df_argmax, here("results", "hmm_features_argmax.rds"))
+
+# Posterior features (used in the models) ---------------------------------
+# Expectations under the posterior of the state sequence instead of counts of
+# the argmax sequence; same column names, so the feature sets in 04-06 stay.
+source(here("jrssa", "hmm_posterior_features.R"))
+
+track_rows = split(seq_len(nrow(data)), factor(data$uniId, levels = unique(data$uniId)))
+delta_idx = if(is.null(rownames(mod$delta))) seq_along(track_rows) else match(names(track_rows), rownames(mod$delta))
+post = lapply(seq_along(track_rows), \(k){
+  idx = track_rows[[k]]
+  hmm_track_posterior(mod$delta[delta_idx[k], ],
+                      mod$Gamma[, , idx, drop = FALSE],
+                      mod$allprobs[idx, , drop = FALSE])
+})
+
+# self-check: local state probabilities must equal LaMa's stateprobs_g()
+post_probs = do.call(rbind, lapply(post, `[[`, "probs"))
+stopifnot(max(abs(post_probs - probs_mat)) < 1e-6)
+
+post_df = data.frame(uniId = names(track_rows),
+                     exp_switches = sapply(post, `[[`, "exp_switches"),
+                     p_switch = sapply(post, `[[`, "p_switch"),
+                     entropy = sapply(post, `[[`, "entropy")) |> 
+  mutate(gameId = str_sub(uniId, 1, 10),
+         playId = str_sub(uniId, 11, str_length(uniId) - 5))
+
+saveRDS(post_df, here("results", "hmm_features_tracks.rds"))
+
+res_df = post_df |> group_by(gameId, playId) |> 
+  summarize(average = mean(exp_switches),       # expected switches per defender
+            sum = sum(exp_switches),            # expected switches in the play
+            nr_player_changes = sum(p_switch),  # expected number of switching defenders
+            average_ent = mean(entropy)) |>     # mean entropy of state occupancy
   mutate(game_play_id = as.numeric(paste0(gameId, playId)))
 
 random_effs = mod$beta_play |> as.data.frame()

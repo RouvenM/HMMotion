@@ -24,6 +24,11 @@ Run the scripts in this order:
 3. 03_create_data_HMM.R
    Decodes the HMM, builds the HMM features and joins all feature sets.
    Writes results/preprocessed_HMM_data_full.rds.
+   HMM features are posterior expectations (hmm_posterior_features.R): expected
+   number of switches (sum, average), expected number of switching defenders
+   (nr_player_changes) and entropy of the time-averaged state probabilities
+   (average_ent). Also writes results/hmm_features_tracks.rds (per defender)
+   and results/hmm_features_argmax.rds (AoAS argmax version, robustness check).
 
 4. 04_zvm_cv_runs.R  (run on LiDO, see run_lido_parallel.sh)
    Coverage models (elastic net, XGBoost): 10 repetitions of 5-fold cross-fitting
@@ -79,5 +84,9 @@ Changes relative to the versions used for the AoAS submission
 - 05: reads the final data and excludes the play random effect ("beta") from
   the pre-motion model.
 - zvm_models.R: random-forest branch referenced an undefined object.
+- 03: HMM features are now posterior expectations from a forward-backward pass
+  instead of counts of the argmax state sequence, so they carry the
+  uncertainty of the decoded assignments. A self-check compares the local
+  state probabilities with LaMa's stateprobs_g().
 - 06: the paper described the marginal tests (right panel) with the partial
   hypothesis Y _||_ X_j | (Z, X_-j); the code conditions on Z only there.
