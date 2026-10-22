@@ -32,6 +32,18 @@ for (i in 2:9) {
 #data = data |> filter(game_play_id %in% unique(data$game_play_id)
 #                      [sample(1:length(unique(data$game_play_id)), 50)])
 
+# Quick test: run options(hmmotion.test = TRUE) before sourcing this script to
+# fit the model on 100 random plays and write to results/test/
+TEST <- isTRUE(getOption("hmmotion.test", FALSE))
+res_dir <- if(TEST) here("results", "test") else here("results")
+dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
+if(TEST){
+  set.seed(1)
+  test_plays <- sample(unique(data$game_play_id), 100)
+  data <- data |> filter(game_play_id %in% test_plays)
+  saveRDS(test_plays, file.path(res_dir, "test_plays.rds"))
+}
+
 library(stringr)
 
 # Anzahl Angreifer
@@ -588,7 +600,7 @@ mod <- obj$report()
 sdr <- sdreport(obj)
 mod$sdr <- sdr
 
-saveRDS(mod, here("results", "mod_final_full.rds"))
+saveRDS(mod, file.path(res_dir, "mod_final_full.rds"))
 
 gc()
 #stateprobs <- stateprobs_g(mod = mod)

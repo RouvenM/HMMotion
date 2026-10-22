@@ -11,6 +11,11 @@ library(dplyr)
 library(vroom)
 library(stringr)
 library(here)
+
+# Quick test: with options(hmmotion.test = TRUE), use the test fit of 02
+# (results/test/) and only its plays
+TEST <- isTRUE(getOption("hmmotion.test", FALSE))
+res_dir <- if(TEST) here("results", "test") else here("results")
 plays = read.csv(here("rawdata","plays.csv"))
 
 data <- vroom(here("rawdata", "final_preprocessed_week_1_lag4.csv"),
@@ -52,11 +57,16 @@ for (i in 2:9) {
 # postmotion_adder <- rbind(postmotion_adder,readRDS("data/w78_dist_adder.rds"))
 # postmotion_adder <- rbind(postmotion_adder,readRDS("data/w9_dist_adder.rds"))
 
+if(TEST){
+  test_plays <- readRDS(file.path(res_dir, "test_plays.rds"))
+  data <- data |> filter(game_play_id %in% test_plays)
+}
+
 ### HMM data
 #load("stateprobs_with_ids.rds") ### needs load function because probably not save via saveRDS!
 #load("HMM_features_lag_4_per_play.rds") ### needs load function because probably not save via saveRDS!
 #load("HMM_features_lag_4.rds") ### needs load function because probably not save via saveRDS!
-mod = readRDS(here("results", "mod_final_full.rds"))
+mod = readRDS(file.path(res_dir, "mod_final_full.rds"))
 #mod = readRDS("mod_final_full.rds")
 
 probs = stateprobs_g(mod = mod)
@@ -123,7 +133,7 @@ res_df_argmax = results_df %>% group_by(gameId, playId) %>%
             average_ent = mean(entropy)) |> 
   mutate(game_play_id = as.numeric(paste0(gameId, playId)))
 
-saveRDS(res_df_argmax, here("results", "hmm_features_argmax.rds"))
+saveRDS(res_df_argmax, file.path(res_dir, "hmm_features_argmax.rds"))
 
 # Posterior features (used in the models) ---------------------------------
 # Expectations under the posterior of the state sequence instead of counts of
@@ -150,7 +160,7 @@ post_df = data.frame(uniId = names(track_rows),
   mutate(gameId = str_sub(uniId, 1, 10),
          playId = str_sub(uniId, 11, str_length(uniId) - 5))
 
-saveRDS(post_df, here("results", "hmm_features_tracks.rds"))
+saveRDS(post_df, file.path(res_dir, "hmm_features_tracks.rds"))
 
 res_df = post_df |> group_by(gameId, playId) |> 
   summarize(average = mean(exp_switches),       # expected switches per defender
@@ -197,4 +207,4 @@ full_data <- premotion_data |> #select(-nflId_football) |>
   drop_na()
 
 
-saveRDS(full_data, here("results", "preprocessed_HMM_data_full.rds"))
+saveRDS(full_data, file.path(res_dir, "preprocessed_HMM_data_full.rds"))
