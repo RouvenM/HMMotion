@@ -9,6 +9,7 @@ library(tidyverse)
 library(LaMa)
 library(ggplot2)
 library(here)
+source(here("jrssa", "settings.R"))
 library(sp)
 library(vroom)
 
@@ -280,7 +281,7 @@ create_offender_lag <- function(df, lag_steps, max_lag) {
   res
 }
 
-data = create_offender_lag(data, 4, 5)
+data = create_offender_lag(data, HMM_LAG, max(HMM_LAG, max_lag))
 
 data$game_play_id = as.character(data$game_play_id)
 data$uniId = as.character(data$uniId)
@@ -628,7 +629,7 @@ dist_infos = dist_infos |> filter(gameplayId %in% tw_full$gameplayId) |>
   filter(gameplayId %in% data$game_play_id)
 
 write.csv(data, file.path(out_dir, paste0("final_preprocessed_week_", jj, 
-                                       "_lag4.csv")), 
+                                       "_lag", HMM_LAG, ".csv")), 
           row.names = FALSE)
 
 saveRDS(tw_full, file.path(out_dir, paste0("week", jj, "_y_ord_od.rds")))

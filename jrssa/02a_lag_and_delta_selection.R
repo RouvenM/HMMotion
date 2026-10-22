@@ -11,9 +11,10 @@
 #    HMM features (as in 03) change with alpha.
 #
 # All lags are fitted on the same rows: the files from 01 hold the attacker
-# positions lagged by 4 frames, so the attacker position at frame f is in the
-# row of frame f + 4. Dropping the first 2 and the last 4 rows of each track
-# leaves every lag from 0 to 6 available.
+# positions lagged by HMM_LAG frames (settings.R), so the attacker position at
+# frame f is in the row of frame f + HMM_LAG. Dropping the first
+# max(lags) - HMM_LAG and the last HMM_LAG rows of each track leaves every lag
+# in lags available.
 #
 # Quick test: options(hmmotion.test = TRUE) uses 20 plays of week 1.
 # Number of plays otherwise: options(hmmotion.lag_n = ...), default 1000;
@@ -22,6 +23,7 @@
 library(dplyr)
 library(vroom)
 library(here)
+source(here("jrssa", "settings.R"))
 library(LaMa)
 source(here("jrssa", "hmm_posterior_features.R"))
 
@@ -32,7 +34,7 @@ weeks <- if(TEST) 1 else 1:9
 n_plays <- if(TEST) getOption("hmmotion.test_n", 20) else getOption("hmmotion.lag_n", 1000)
 
 n_att <- 5
-lag_in_file <- 4  # lag used when 01 wrote the files
+lag_in_file <- HMM_LAG  # lag used when 01 wrote the files
 lags <- 0:6
 alphas <- c(0.25, 0.5, 1, 2, 4)
 att_cols <- paste0("player", 1:n_att, "_y")
@@ -40,7 +42,7 @@ att_cols <- paste0("player", 1:n_att, "_y")
 # Data --------------------------------------------------------------------
 
 data <- bind_rows(lapply(weeks, \(w){
-  vroom(here("rawdata", paste0("final_preprocessed_week_", w, "_lag4.csv")),
+  vroom(hmm_file(w),
         col_select = all_of(c("uniId", "game_play_id", "frameId", "y", att_cols)),
         col_types = cols(uniId = "c", game_play_id = "c", .default = "d"),
         show_col_types = FALSE)

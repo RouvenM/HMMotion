@@ -11,6 +11,7 @@ library(dplyr)
 library(vroom)
 library(stringr)
 library(here)
+source(here("jrssa", "settings.R"))
 
 # Quick test: with options(hmmotion.test = TRUE), use the test fit of 02
 # (results/test/), only week 1 and only its plays
@@ -18,15 +19,14 @@ TEST <- isTRUE(getOption("hmmotion.test", FALSE))
 res_dir <- if(TEST) here("results", "test") else here("results")
 plays = read.csv(here("rawdata","plays.csv"))
 
-data <- vroom(here("rawdata", "final_preprocessed_week_1_lag4.csv"),
+data <- vroom(hmm_file(1),
               col_types = list(
                 uniId = col_character(),
                 game_play_id = col_character()
               ))
 data$week = 1
 for (i in if(TEST) integer(0) else 2:9) {
-  data <- rbind(data, vroom(here("rawdata", paste0("final_preprocessed_week_",i,
-                                                   "_lag4.csv")),
+  data <- rbind(data, vroom(hmm_file(i),
                             col_types = list(
                               uniId = col_character(),
                               game_play_id = col_character()

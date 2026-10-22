@@ -14,6 +14,7 @@ library(LaMa)
 library(ggplot2)
 library(vroom)
 library(here)
+source(here("jrssa", "settings.R"))
 
 # Quick test: run options(hmmotion.test = TRUE) before sourcing this script to
 # fit the model on a few random plays of week 1 (default 20, set with
@@ -24,15 +25,14 @@ TEST <- isTRUE(getOption("hmmotion.test", FALSE))
 # chosen with 02a_lag_and_delta_selection.R
 alpha_delta <- 1
 
-data <- vroom(here("rawdata", "final_preprocessed_week_1_lag4.csv"),
+data <- vroom(hmm_file(1),
               col_types = list(
                 uniId = col_character(),
                 game_play_id = col_character()
               ))
 data$week = 1
 for (i in if(TEST) integer(0) else 2:9) {
-  data <- rbind(data, vroom(here("rawdata", paste0("final_preprocessed_week_",i,
-                                                              "_lag4.csv")),
+  data <- rbind(data, vroom(hmm_file(i),
                             col_types = list(
                               uniId = col_character(),
                               game_play_id = col_character()

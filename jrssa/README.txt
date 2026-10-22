@@ -11,7 +11,7 @@ Run the scripts in this order:
 
 1. 01_preprocessing.R
    Preprocessing for the HMM and the supervised models. Writes per week to rawdata/:
-   final_preprocessed_week_<w>_lag4.csv (HMM input), week<w>_y_ord_od.rds
+   final_preprocessed_week_<w>_lag<HMM_LAG>.csv (HMM input), week<w>_y_ord_od.rds
    (pre-motion features), week_<w>_dist_adder.rds (naive post-motion features).
 
 1a. 02a_lag_and_delta_selection.R  (local, before 02)
@@ -19,8 +19,10 @@ Run the scripts in this order:
    profile likelihood over alpha in {0.25, 0.5, 1, 2, 4} for the initial
    distribution and how much the posterior HMM features change with alpha.
    Writes results/lag_delta_selection.rds. Set the chosen alpha as alpha_delta
-   at the top of 02. If another lag than 4 is chosen, 01 must be rerun with that
-   lag (create_offender_lag(data, <lag>, <max(lag, 5)>)).
+   at the top of 02. The lag is set once in settings.R (HMM_LAG, read by 01, 02,
+   02a and 03); changing it requires rerunning 01.
+   Result on the corrected data (1000 plays): lag 5 (0.5 s) has the lowest AIC
+   (dAIC: lag 4 +93, lag 6 +348, lag 3 +614), so HMM_LAG = 5 (AoAS: 4).
 
 2. 02_HMM_model_fitting_server.R  (run on LiDO, see run_lido_job.sh)
    Final non-homogeneous HMM with distance covariate and team/position/play
@@ -79,6 +81,7 @@ Changes relative to the versions used for the AoAS submission
   defender closest to the line and kept deep safeties.
   Check after rerun (kept defenders, left vs right): deeper than 10 yd
   1.2% vs 1.0% (before 1.3% vs 20.4%), FS+SS 10.1% vs 9.8% (before 9.9% vs 37.5%).
+- Lag 5 instead of 4 (AIC on the corrected data, see 02a); set in settings.R.
 - 02: positions DB and LB (almost no observations) are merged into CB and ILB
   for the position random effect; alpha of the initial distribution is set once
   (alpha_delta) and chosen with 02a.
