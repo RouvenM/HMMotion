@@ -15,16 +15,20 @@ Run the scripts in this order:
    (pre-motion features), week_<w>_dist_adder.rds (naive post-motion features).
 
 1a. 02a_lag_and_delta_selection.R  (local, before 02)
-   Homogeneous HMM on 1000 random plays: AIC over lags 0-6 (alpha = 1), then
-   profile likelihood over alpha in {0.25, 0.5, 1, 2, 4} for the initial
+   Homogeneous HMM on 1000 random plays (all plays: options(hmmotion.lag_n = NA)):
+   AIC over lags 0-6 (alpha = 1), then profile likelihood over
+   alpha in {0.25, 0.5, 1, 2, 4, 8, 16} for the initial
    distribution and how much the posterior HMM features change with alpha.
    Writes results/lag_delta_selection.rds. Set the chosen alpha as alpha_delta
    at the top of 02. The lag is set once in settings.R (HMM_LAG, read by 01, 02,
    02a and 03); changing it requires rerunning 01. Shortcut from existing lag-4
    files: 01b_shift_lag4_to_lag5.R (shifts player*_y by one row per track, drops
    the first row of each track; otherwise identical to a rerun of 01).
-   Result on the corrected data (1000 plays): lag 5 (0.5 s) has the lowest AIC
-   (dAIC: lag 4 +93, lag 6 +348, lag 3 +614), so HMM_LAG = 5 (AoAS: 4).
+   Results on the corrected data: lags 4 and 5 (0.4-0.5 s) are close and their
+   order depends on the subsample (1000 plays: lag 5 best, lag 4 +93; 500 plays:
+   lag 4 best, lag 5 +30); lags <= 3 and 6 are clearly worse. HMM_LAG = 4.
+   Posterior HMM features hardly depend on alpha (correlation with alpha = 1
+   >= 0.988 for alpha in 0.25-4); the likelihood prefers alpha >= 2.
 
 2. 02_HMM_model_fitting_server.R  (run on LiDO, see run_lido_job.sh)
    Final non-homogeneous HMM with distance covariate and team/position/play
@@ -83,7 +87,7 @@ Changes relative to the versions used for the AoAS submission
   defender closest to the line and kept deep safeties.
   Check after rerun (kept defenders, left vs right): deeper than 10 yd
   1.2% vs 1.0% (before 1.3% vs 20.4%), FS+SS 10.1% vs 9.8% (before 9.9% vs 37.5%).
-- Lag 5 instead of 4 (AIC on the corrected data, see 02a); set in settings.R.
+- Lag selection rerun on the corrected data (02a); lag 4 kept, set in settings.R.
 - 02: positions DB and LB (almost no observations) are merged into CB and ILB
   for the position random effect; alpha of the initial distribution is set once
   (alpha_delta) and chosen with 02a.

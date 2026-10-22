@@ -36,7 +36,7 @@ n_plays <- if(TEST) getOption("hmmotion.test_n", 20) else getOption("hmmotion.la
 n_att <- 5
 lag_in_file <- HMM_LAG  # lag used when 01 wrote the files
 lags <- 0:6
-alphas <- c(0.25, 0.5, 1, 2, 4)
+alphas <- c(0.25, 0.5, 1, 2, 4, 8, 16)
 att_cols <- paste0("player", 1:n_att, "_y")
 
 # Data --------------------------------------------------------------------
