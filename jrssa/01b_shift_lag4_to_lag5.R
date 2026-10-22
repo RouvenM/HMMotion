@@ -19,9 +19,12 @@ att_cols <- paste0("player", 1:5, "_y")
 
 for(w in 1:9){
   cat("week", w, "\n")
+  # read every column as text, so no value is changed by type guessing
+  # (e.g. event is empty in the first rows and would be guessed as logical)
   d4 <- vroom(here("rawdata", paste0("final_preprocessed_week_", w, "_lag4.csv")),
-              col_types = cols(uniId = "c", game_play_id = "c"),
+              col_types = cols(.default = "c"),
               show_col_types = FALSE)
+  stopifnot(nrow(problems(d4)) == 0)
 
   d5 <- d4 |>
     group_by(uniId) |>
