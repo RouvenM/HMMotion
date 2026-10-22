@@ -8,11 +8,13 @@
 
 # delta:    initial distribution of the track (length N)
 # Gamma:    N x N x n array; Gamma[,,t] is the transition from t-1 to t
-#           (Gamma[,,1] is ignored), as used by LaMa::forward_g
+#           (Gamma[,,1] is ignored), as used by LaMa::forward_g;
+#           or a single N x N matrix for a homogeneous chain
 # allprobs: n x N matrix of state-dependent densities
 hmm_track_posterior <- function(delta, Gamma, allprobs){
   n <- nrow(allprobs)
   N <- ncol(allprobs)
+  if(length(dim(Gamma)) == 2) Gamma <- array(Gamma, c(N, N, n))
 
   # scaled forward and backward variables
   alpha <- matrix(0, n, N)

@@ -20,6 +20,10 @@ library(here)
 # options(hmmotion.test_n = ...)) and write to results/test/
 TEST <- isTRUE(getOption("hmmotion.test", FALSE))
 
+# Sharpness alpha of the initial distribution softmax(-alpha * |y_def - y_att|);
+# chosen with 02a_lag_and_delta_selection.R
+alpha_delta <- 1
+
 data <- vroom(here("rawdata", "final_preprocessed_week_1_lag4.csv"),
               col_types = list(
                 uniId = col_character(),
@@ -46,11 +50,18 @@ if(TEST){
   saveRDS(test_plays, file.path(res_dir, "test_plays.rds"))
 }
 
+# Merge positions with almost no observations into their closest role for the
+# position random effect: generic DB -> CB, generic LB -> ILB
+data <- data |> 
+  mutate(position = case_when(position == "DB" ~ "CB",
+                              position == "LB" ~ "ILB",
+                              TRUE ~ position))
+
 library(stringr)
 
 # Anzahl Angreifer
 n_att <- 5
-alpha <- 1  # Einflussparameter für Abstand
+alpha <- alpha_delta  # Einflussparameter für Abstand
 
 #We initialize the defender-attacker assignments using a softmax over the negative vertical distances between players, 
 # following standard probabilistic matching approaches (Bishop, 2006; Cuturi, 2013). The parameter𝛼
@@ -431,7 +442,7 @@ Deltas <- do.call(rbind, lapply(split(data, data$uniId)[as.character(unique(data
 
 # Anzahl Angreifer
 n_att <- 5
-alpha <- 1  # Einflussparameter für Abstand
+alpha <- alpha_delta  # Einflussparameter für Abstand
 
 # We initialize the defender-attacker assignments using a softmax over the negative vertical distances between players, 
 # following standard probabilistic matching approaches (Bishop, 2006; Cuturi, 2013). The parameter𝛼
