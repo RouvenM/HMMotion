@@ -20,7 +20,9 @@ Run the scripts in this order:
    distribution and how much the posterior HMM features change with alpha.
    Writes results/lag_delta_selection.rds. Set the chosen alpha as alpha_delta
    at the top of 02. The lag is set once in settings.R (HMM_LAG, read by 01, 02,
-   02a and 03); changing it requires rerunning 01.
+   02a and 03); changing it requires rerunning 01. Shortcut from existing lag-4
+   files: 01b_shift_lag4_to_lag5.R (shifts player*_y by one row per track, drops
+   the first row of each track; otherwise identical to a rerun of 01).
    Result on the corrected data (1000 plays): lag 5 (0.5 s) has the lowest AIC
    (dAIC: lag 4 +93, lag 6 +348, lag 3 +614), so HMM_LAG = 5 (AoAS: 4).
 
