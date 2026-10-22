@@ -15,13 +15,18 @@ library(ggplot2)
 library(vroom)
 library(here)
 
+# Quick test: run options(hmmotion.test = TRUE) before sourcing this script to
+# fit the model on a few random plays of week 1 (default 20, set with
+# options(hmmotion.test_n = ...)) and write to results/test/
+TEST <- isTRUE(getOption("hmmotion.test", FALSE))
+
 data <- vroom(here("rawdata", "final_preprocessed_week_1_lag4.csv"),
               col_types = list(
                 uniId = col_character(),
                 game_play_id = col_character()
               ))
 data$week = 1
-for (i in 2:9) {
+for (i in if(TEST) integer(0) else 2:9) {
   data <- rbind(data, vroom(here("rawdata", paste0("final_preprocessed_week_",i,
                                                               "_lag4.csv")),
                             col_types = list(
@@ -32,14 +37,11 @@ for (i in 2:9) {
 #data = data |> filter(game_play_id %in% unique(data$game_play_id)
 #                      [sample(1:length(unique(data$game_play_id)), 50)])
 
-# Quick test: run options(hmmotion.test = TRUE) before sourcing this script to
-# fit the model on 100 random plays and write to results/test/
-TEST <- isTRUE(getOption("hmmotion.test", FALSE))
 res_dir <- if(TEST) here("results", "test") else here("results")
 dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
 if(TEST){
   set.seed(1)
-  test_plays <- sample(unique(data$game_play_id), 100)
+  test_plays <- sample(unique(data$game_play_id), getOption("hmmotion.test_n", 20))
   data <- data |> filter(game_play_id %in% test_plays)
   saveRDS(test_plays, file.path(res_dir, "test_plays.rds"))
 }
