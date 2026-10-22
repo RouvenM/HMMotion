@@ -7,7 +7,7 @@
 #
 # 1. Lag l (defender reaction time): AIC for l = 0, ..., 6 with alpha = 1.
 # 2. Initial distribution delta = softmax(-alpha * |y_def - y_att|) at the
-#    selected lag: profile likelihood over alpha, and how much the posterior
+#    lag set in settings.R (HMM_LAG): profile likelihood over alpha, and how much the posterior
 #    HMM features (as in 03) change with alpha.
 #
 # All lags are fitted on the same rows: the files from 01 hold the attacker
@@ -118,7 +118,8 @@ print(lag_tab)
 
 # 2. Initial distribution -------------------------------------------------
 
-X <- X_lag(lag_sel)
+# alpha is assessed at the lag used in the pipeline (settings.R)
+X <- X_lag(HMM_LAG)
 track_rows <- split(seq_along(y), factor(ID, levels = unique(ID)))
 play_of_track <- data$game_play_id[eval_rows][first_rows]
 

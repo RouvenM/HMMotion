@@ -22,8 +22,9 @@ source(here("jrssa", "settings.R"))
 TEST <- isTRUE(getOption("hmmotion.test", FALSE))
 
 # Sharpness alpha of the initial distribution softmax(-alpha * |y_def - y_att|);
-# chosen with 02a_lag_and_delta_selection.R
-alpha_delta <- 1
+# chosen with 02a_lag_and_delta_selection.R: profile likelihood maximal at 4
+# (alpha = 2 and 8 about 50 log-likelihood units lower, alpha = 1 about 356)
+alpha_delta <- 4
 
 data <- vroom(hmm_file(1),
               col_types = list(

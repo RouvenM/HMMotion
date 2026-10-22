@@ -27,8 +27,10 @@ Run the scripts in this order:
    Results on the corrected data: lags 4 and 5 (0.4-0.5 s) are close and their
    order depends on the subsample (1000 plays: lag 5 best, lag 4 +93; 500 plays:
    lag 4 best, lag 5 +30); lags <= 3 and 6 are clearly worse. HMM_LAG = 4.
-   Posterior HMM features hardly depend on alpha (correlation with alpha = 1
-   >= 0.988 for alpha in 0.25-4); the likelihood prefers alpha >= 2.
+   alpha (1000 plays, grid 0.25-16): profile likelihood maximal at alpha = 4
+   (alpha 2 and 8: +50, alpha 1: +356 in negative log-likelihood), so
+   alpha_delta = 4 in 02 (AoAS: 1). Posterior HMM features hardly depend on
+   alpha (correlation with alpha = 1: >= 0.988 at alpha = 4, >= 0.96 at 16).
 
 2. 02_HMM_model_fitting_server.R  (run on LiDO, see run_lido_job.sh)
    Final non-homogeneous HMM with distance covariate and team/position/play
