@@ -612,39 +612,50 @@ print("done")
 # H <- obj2$env$spHess(random = TRUE)
 # SparseM::image(H)
 
-# Optimisation in chunks with checkpoints, so the fit survives the time limit
-# of a SLURM job: after every chunk the fixed effects and the full parameter
-# vector (incl. random effects, used as inner starting values) are saved. A new
-# job started with the same setup continues from the last checkpoint.
+# Optimisation with checkpoints, so the fit survives the time limit of a SLURM
+# job. nlminb runs uninterrupted (restarting it would discard its curvature
+# information); the objective is wrapped so that the best parameters so far and
+# the full parameter vector (incl. random effects, used as inner starting
+# values) are saved at most every ckpt_minutes. A new job started with the same
+# setup continues from the last checkpoint.
 ckpt_file <- file.path(res_dir, "mod_checkpoint.rds")
-chunk_iter <- 5
+ckpt_minutes <- getOption("hmmotion.ckpt_minutes", 30)
 par_start <- obj$par
-iterations <- 0
 if(file.exists(ckpt_file)){
   ckpt <- readRDS(ckpt_file)
   if(identical(names(ckpt$par), names(par_start)) &&
      length(ckpt$full) == length(obj$env$last.par.best)){
     par_start <- ckpt$par
     obj$env$last.par.best <- ckpt$full
-    iterations <- ckpt$iterations
-    cat("Resuming from checkpoint of", format(ckpt$time), "after", ckpt$iterations, "iterations\n")
+    cat("Resuming from checkpoint of", format(ckpt$time), "with nll", ckpt$objective, "\n")
   }
 }
 
-t_start <- Sys.time()
-repeat{
-  opt <- nlminb(par_start, obj$fn, obj$gr,
-                control = list(iter.max = chunk_iter, eval.max = 2 * chunk_iter))
-  iterations <- iterations + opt$iterations
-  saveRDS(list(par = opt$par, full = obj$env$last.par.best, objective = opt$objective,
-               iterations = iterations, message = opt$message, time = Sys.time()),
-          ckpt_file)
-  cat(format(Sys.time()), "| iterations:", iterations, "| nll:", opt$objective,
-      "| par:", round(opt$par, 4), "|", opt$message, "\n")
-  # continue only if the chunk stopped at its iteration or evaluation limit
-  if(!grepl("limit", opt$message)) break
-  par_start <- opt$par
+best <- list(objective = Inf, par = par_start)
+last_save <- Sys.time()
+n_eval <- 0
+fn_ckpt <- function(p){
+  val <- obj$fn(p)
+  n_eval <<- n_eval + 1
+  if(is.finite(val) && val < best$objective){
+    best$objective <<- val
+    best$par <<- p
+  }
+  if(difftime(Sys.time(), last_save, units = "mins") > ckpt_minutes){
+    saveRDS(list(par = best$par, full = obj$env$last.par.best,
+                 objective = best$objective, time = Sys.time()), ckpt_file)
+    cat(format(Sys.time()), "| evaluations:", n_eval, "| best nll:", best$objective,
+        "| par:", round(best$par, 4), "\n")
+    last_save <<- Sys.time()
+  }
+  val
 }
+
+t_start <- Sys.time()
+opt <- nlminb(par_start, fn_ckpt, obj$gr)
+saveRDS(list(par = opt$par, full = obj$env$last.par.best, objective = opt$objective,
+             time = Sys.time(), message = opt$message), ckpt_file)
+cat(format(Sys.time()), "| finished:", opt$message, "| nll:", opt$objective, "\n")
 print(Sys.time() - t_start)
 
 obj$fn(opt$par)  # make sure the reported quantities belong to the optimum

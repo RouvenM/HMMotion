@@ -37,8 +37,9 @@ Run the scripts in this order:
    random effects. Writes results/mod_final_full.rds.
    Warm start: copy an earlier fit to results/mod_start.rds to start from its
    fixed-effect estimates (fewer iterations).
-   The fit takes about a week. It optimises in chunks and saves
-   results/mod_checkpoint.rds after each; a new job continues from there, so it
+   The fit takes about a week. nlminb runs uninterrupted, and the best parameters
+   so far are saved to results/mod_checkpoint.rds every 30 minutes; a new job
+   continues from there, so it
    runs as a chain of 2-day jobs on partition long (see run_lido_job.sh). When
    done it writes results/HMM_DONE.txt and later jobs of the chain stop at once.
    (02b_HMM_model_fitting_exploratory.R: earlier homogeneous / team+position models.)
