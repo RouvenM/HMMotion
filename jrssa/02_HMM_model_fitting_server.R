@@ -21,6 +21,12 @@ source(here("jrssa", "settings.R"))
 # options(hmmotion.test_n = ...)) and write to results/test/
 TEST <- isTRUE(getOption("hmmotion.test", FALSE))
 
+# Chained SLURM jobs: stop right away once a previous job finished the fit
+if(!TEST && file.exists(here("results", "HMM_DONE.txt"))){
+  cat("HMM already fitted (results/HMM_DONE.txt), nothing to do.\n")
+  quit(save = "no")
+}
+
 # Sharpness alpha of the initial distribution softmax(-alpha * |y_def - y_att|);
 # chosen with 02a_lag_and_delta_selection.R: profile likelihood maximal at 4
 # (alpha = 2 and 8 about 50 log-likelihood units lower, alpha = 1 about 356)
@@ -606,15 +612,48 @@ print("done")
 # H <- obj2$env$spHess(random = TRUE)
 # SparseM::image(H)
 
-system.time(
-  opt <- nlminb(obj$par, obj$fn, obj$gr)
-)
+# Optimisation in chunks with checkpoints, so the fit survives the time limit
+# of a SLURM job: after every chunk the fixed effects and the full parameter
+# vector (incl. random effects, used as inner starting values) are saved. A new
+# job started with the same setup continues from the last checkpoint.
+ckpt_file <- file.path(res_dir, "mod_checkpoint.rds")
+chunk_iter <- 5
+par_start <- obj$par
+iterations <- 0
+if(file.exists(ckpt_file)){
+  ckpt <- readRDS(ckpt_file)
+  if(identical(names(ckpt$par), names(par_start)) &&
+     length(ckpt$full) == length(obj$env$last.par.best)){
+    par_start <- ckpt$par
+    obj$env$last.par.best <- ckpt$full
+    iterations <- ckpt$iterations
+    cat("Resuming from checkpoint of", format(ckpt$time), "after", ckpt$iterations, "iterations\n")
+  }
+}
 
+t_start <- Sys.time()
+repeat{
+  opt <- nlminb(par_start, obj$fn, obj$gr,
+                control = list(iter.max = chunk_iter, eval.max = 2 * chunk_iter))
+  iterations <- iterations + opt$iterations
+  saveRDS(list(par = opt$par, full = obj$env$last.par.best, objective = opt$objective,
+               iterations = iterations, message = opt$message, time = Sys.time()),
+          ckpt_file)
+  cat(format(Sys.time()), "| iterations:", iterations, "| nll:", opt$objective,
+      "| par:", round(opt$par, 4), "|", opt$message, "\n")
+  # continue only if the chunk stopped at its iteration or evaluation limit
+  if(!grepl("limit", opt$message)) break
+  par_start <- opt$par
+}
+print(Sys.time() - t_start)
+
+obj$fn(opt$par)  # make sure the reported quantities belong to the optimum
 mod <- obj$report()
 sdr <- sdreport(obj)
 mod$sdr <- sdr
 
 saveRDS(mod, file.path(res_dir, "mod_final_full.rds"))
+writeLines(c(format(Sys.time()), opt$message), file.path(res_dir, "HMM_DONE.txt"))
 
 gc()
 #stateprobs <- stateprobs_g(mod = mod)
