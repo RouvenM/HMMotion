@@ -54,13 +54,13 @@ for(team in teams){
   cat(team," ")
   Team_plays <- model_data_full |> 
     filter(possessionTeam == team) |>
-    select(-week,-possessionTeam)
+    select(-starts_with("week"),-possessionTeam)
   
   #prop.table(table(Team_plays$pff_manZone_num))
   
   NTeam_plays <- model_data_full |> 
     filter(possessionTeam != team) |>
-    select(-week,-possessionTeam)
+    select(-starts_with("week"),-possessionTeam)
   
   #prop.table(table(NTeam_plays$pff_manZone_num))
   

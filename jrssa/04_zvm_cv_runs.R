@@ -21,7 +21,28 @@ library(stringr)
 source(here("jrssa", "zvm_models.R"))
 # Load data ---------------------------------------------------------------
 
-full_data <- readRDS(here("results", "preprocessed_HMM_data_full.rds"))
+# Quick test: options(hmmotion.test = TRUE) runs the whole script on 500 random
+# plays (options(hmmotion.test_n04 = ...)) with noise in place of the HMM
+# features, 2 repetitions, a small XGBoost grid and 2 test weeks, and writes to
+# results/test/. It checks the pipeline (cross-fitting, LOWO, parallel workers,
+# saving) without the HMM fit.
+TEST <- isTRUE(getOption("hmmotion.test", FALSE))
+res_dir <- if(TEST) here("results", "test") else here("results")
+dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
+test_grid <- if(TEST) expand_grid(eta = 0.3, max_depth = c(1, 3)) else NULL
+
+if(TEST){
+  set.seed(1)
+  pre <- bind_rows(lapply(1:9, \(w) readRDS(here("rawdata", paste0("week", w, "_y_ord_od.rds")))))
+  post <- bind_rows(lapply(1:9, \(w) readRDS(here("rawdata", paste0("week_", w, "_dist_adder.rds")))))
+  full_data <- pre |> left_join(post, by = "gameplayId") |> drop_na()
+  full_data <- full_data[sample(nrow(full_data), min(nrow(full_data), getOption("hmmotion.test_n04", 500))), ]
+  full_data <- full_data |> 
+    mutate(beta = rnorm(n()), average = rexp(n()), sum = rexp(n()),
+           nr_player_changes = runif(n(), 0, 5), average_ent = runif(n()))
+}else{
+  full_data <- readRDS(file.path(res_dir, "preprocessed_HMM_data_full.rds"))
+}
 
 ######################
 ### clock manipulations
@@ -54,8 +75,9 @@ model_data_full <- fm_add |>
 # keep the real week for leave-one-week-out CV, but not as a feature
 play_week <- model_data_full$week
 
+# 03 adds week columns from both feature sets (week.x, week.y): drop all
 model_data_full <- model_data_full |>
-  select(-week,-possessionTeam)
+  select(-starts_with("week"),-possessionTeam)
 
 # Modelling function ---------------------------------------------------------------
 
@@ -401,7 +423,7 @@ run_models_small <- function(seedu, model_data_full){
   
 }
 
-run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_test){
+run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_test, param_grid = NULL){
   
   library(tidyr)
   library(dplyr)
@@ -453,6 +475,7 @@ run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_
   
   xgb_xy <- zvm_models(model_data,test_data,
                        ml_type = "xgboost",
+                       param_grid = param_grid,
                        excl_vars = c(
                          names(model_data)[grep("dist_fb",names(model_data))],
                          names(model_data)[grep("def_o_qb_diff",names(model_data))]),
@@ -461,6 +484,7 @@ run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_
   
   xgb_xy2 <- zvm_models(model_data,test_data,
                         ml_type = "xgboost",
+                        param_grid = param_grid,
                         excl_vars = c("beta", "average","sum","nr_player_changes","average_ent",
                                       names(model_data)[grep("dist_fb",names(model_data))],
                                       names(model_data)[grep("def_o_qb_diff",names(model_data))]),
@@ -471,6 +495,7 @@ run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_
   
   xgb_xy_npo2 <- zvm_models(model_data,test_data,
                             ml_type = "xgboost",
+                            param_grid = param_grid,
                             excl_vars = c("beta", "average","sum","nr_player_changes","average_ent",
                                           names(model_data)[grep("dist_fb",names(model_data))],
                                           names(model_data)[grep("def_o_qb_diff",names(model_data))],
@@ -532,7 +557,7 @@ run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_
 # K-fold cross-fitting (as described in the paper): every play gets an
 # out-of-sample prediction from a model trained on the other K-1 folds;
 # hyperparameters are tuned by the inner CV inside zvm_models().
-run_models_crossfit <- function(seedu, model_data_full, K = 5){
+run_models_crossfit <- function(seedu, model_data_full, K = 5, param_grid = NULL){
   
   # load packages on the parallel workers, zvm_models() needs all of them
   library(dplyr)
@@ -566,7 +591,10 @@ run_models_crossfit <- function(seedu, model_data_full, K = 5){
                      excl_vars = feature_sets[[fs]],
                      seed = seedu,
                      return_preds = TRUE)
-        if(ml == "xgboost") args$verbose <- FALSE
+        if(ml == "xgboost"){
+          args$verbose <- FALSE
+          args$param_grid <- param_grid
+        }
         p[folds == k] <- c(do.call(zvm_models, args)$preds)
       }
       preds[[ml]][[fs]] <- p
@@ -604,16 +632,17 @@ library(parallel)
 
 # Each repetition yields out-of-sample predictions for all plays, so 10
 # repetitions of 5-fold cross-fitting (50 fits per model) suffice
-nsim <- 10
+nsim <- if(TEST) 2 else 10
 seeds <- round(seq(1, 1000, length.out = nsim))
 
 # Cluster mit Anzahl der Kerne erstellen
 # use the cores SLURM allocated (detectCores() returns all cores of the node)
 n_cores <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", detectCores() - 1))
+if(TEST) n_cores <- min(n_cores, 2)
 cl <- makeCluster(n_cores)
 
 # Optional: benötigte Funktionen/Objekte exportieren
-clusterExport(cl, c("run_models_crossfit", "zvm_models", "seeds", "model_data_full"))
+clusterExport(cl, c("run_models_crossfit", "zvm_models", "seeds", "model_data_full", "test_grid"))
 
 results_list <- parLapply(
   cl,
@@ -621,7 +650,7 @@ results_list <- parLapply(
   function(seedu) {
     cat("\n\nIteration ", which(seeds == seedu))
     cat("\nSeed: ", seedu, "\n\n")
-    run_models_crossfit(seedu, model_data_full)
+    run_models_crossfit(seedu, model_data_full, param_grid = test_grid)
   }
 )
 
@@ -629,19 +658,20 @@ stopCluster(cl)   # Cluster wieder schließen
 
 #saveRDS(results_list,"data/zvm_cv_runs_240925_full_n14.rds")
 #saveRDS(results_list, here("results", "zvm_cv_runs_full_only_xgb.rds"))
-saveRDS(results_list, here("results", "zvm_crossfit_runs.rds"))
+saveRDS(results_list, file.path(res_dir, "zvm_crossfit_runs.rds"))
 
 
 
 # LOWO CV -----------------------------------------------------------------
 # Uses the real week of each play (play_week), not row blocks
 weeks <- sort(unique(play_week))
+if(TEST) weeks <- weeks[1:2]
 
 # Cluster erstellen
 cl <- makeCluster(n_cores)
 
 # Notwendige Objekte/Funktionen exportieren
-clusterExport(cl, c("run_models_small_lowo", "zvm_models", "model_data_full", "play_week", "weeks"))
+clusterExport(cl, c("run_models_small_lowo", "zvm_models", "model_data_full", "play_week", "weeks", "test_grid"))
 
 results_list <- parLapply(
   cl,
@@ -659,18 +689,19 @@ results_list <- parLapply(
     # Modell auf Trainingsdaten fitten und auf Testdaten evaluieren
     run_models_small_lowo(seedu = 123,
                           model_data_full_train = train_data,
-                          model_data_full_test  = test_data)
+                          model_data_full_test  = test_data,
+                          param_grid = test_grid)
   }
 )
 
 stopCluster(cl)
 
-saveRDS(results_list, here("results", "zvm_lowo_runs.rds"))
+saveRDS(results_list, file.path(res_dir, "zvm_lowo_runs.rds"))
 
 
 # Results ---------------------------------------------------------------
 
-results_list <- readRDS(here("results", "zvm_crossfit_runs.rds"))
+results_list <- readRDS(file.path(res_dir, "zvm_crossfit_runs.rds"))
 
 #### tables and averages
 

@@ -51,6 +51,9 @@ Run the scripts in this order:
 4. 04_zvm_cv_runs.R  (run on LiDO, see run_lido_parallel.sh)
    Coverage models (elastic net, XGBoost): 10 repetitions of 5-fold cross-fitting
    -> results/zvm_crossfit_runs.rds; leave-one-week-out CV -> results/zvm_lowo_runs.rds.
+   Quick test without the HMM: options(hmmotion.test = TRUE) uses 500 random plays
+   with noise as HMM features, 2 repetitions, a small grid and 2 test weeks
+   (results/test/).
 
 5. 05_zvm_team_analyses.R
    Leave-one-team-out comparison of the pre-motion and HMM post-motion models.
@@ -103,6 +106,8 @@ Changes relative to the versions used for the AoAS submission
   eta {0.05, 0.1, 0.3} x depth {1, 3, 5} instead of 6 x 4 values, one thread per
   XGBoost fit and as many workers as SLURM allocated (detectCores() returned
   all cores of the node, oversubscribing it).
+- 04, 05: drop all week columns (03 creates week.x and week.y); before, they
+  entered the coverage models as features.
 - 05: reads the final data and excludes the play random effect ("beta") from
   the pre-motion model.
 - zvm_models.R: random-forest branch referenced an undefined object.
