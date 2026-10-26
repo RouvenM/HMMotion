@@ -21,9 +21,14 @@ source(here("jrssa", "settings.R"))
 # options(hmmotion.test_n = ...)) and write to results/test/
 TEST <- isTRUE(getOption("hmmotion.test", FALSE))
 
+# Results folder: results/ by default; another one can be set with the
+# environment variable HMMOTION_RESULTS (e.g. for a second run in parallel)
+res_dir <- if(TEST) here("results", "test") else here(Sys.getenv("HMMOTION_RESULTS", "results"))
+dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
+
 # Chained SLURM jobs: stop right away once a previous job finished the fit
-if(!TEST && file.exists(here("results", "HMM_DONE.txt"))){
-  cat("HMM already fitted (results/HMM_DONE.txt), nothing to do.\n")
+if(!TEST && file.exists(file.path(res_dir, "HMM_DONE.txt"))){
+  cat("HMM already fitted (", file.path(res_dir, "HMM_DONE.txt"), "), nothing to do.\n")
   quit(save = "no")
 }
 
@@ -48,8 +53,6 @@ for (i in if(TEST) integer(0) else 2:9) {
 #data = data |> filter(game_play_id %in% unique(data$game_play_id)
 #                      [sample(1:length(unique(data$game_play_id)), 50)])
 
-res_dir <- if(TEST) here("results", "test") else here("results")
-dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
 if(TEST){
   set.seed(1)
   all_plays <- unique(data$game_play_id)
@@ -550,7 +553,7 @@ par = list(beta0 = -5,
 # Warm start: if an earlier fit is saved as results/mod_start.rds (e.g. a
 # previous mod_final_full.rds), start from its fixed-effect estimates, which
 # cuts the number of outer iterations
-start_file <- here("results", "mod_start.rds")
+start_file <- here("results", "mod_start.rds")  # shared by all runs
 if(file.exists(start_file)){
   mod_start <- readRDS(start_file)
   par$beta0 <- as.numeric(mod_start$beta0)
@@ -609,8 +612,9 @@ TMB::config(tmbad.sparse_hessian_compress = TRUE)
 # Optional (off by default): record matrix products as plain operations on the
 # tape, as suggested by RTMB's performance tip. This only changes how the tape
 # is built, not the model, the likelihood or the optimiser.
-# Switch on with options(hmmotion.matmul_plain = TRUE).
-if(isTRUE(getOption("hmmotion.matmul_plain", FALSE))){
+# Switch on with options(hmmotion.matmul_plain = TRUE) or the environment
+# variable HMMOTION_MATMUL_PLAIN=1.
+if(isTRUE(getOption("hmmotion.matmul_plain", FALSE)) || Sys.getenv("HMMOTION_MATMUL_PLAIN") == "1"){
   TapeConfig(matmul = "plain")
   cat("TapeConfig(matmul = 'plain') is on\n")
 }

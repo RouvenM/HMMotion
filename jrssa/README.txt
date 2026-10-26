@@ -42,6 +42,10 @@ Run the scripts in this order:
    (run_lido_job.sh). nlminb runs uninterrupted; the best parameters so far are
    saved to results/mod_checkpoint.rds every 30 minutes, and a resubmitted job
    continues from there. When done it writes results/HMM_DONE.txt.
+   Environment variables for a second run in parallel: HMMOTION_RESULTS=<folder>
+   (results folder of the run, default results) and HMMOTION_MATMUL_PLAIN=1
+   (TapeConfig(matmul = 'plain'): same likelihood, about 28% faster first
+   evaluation in a local test with 200 plays, more memory).
    (02b_HMM_model_fitting_exploratory.R: earlier homogeneous / team+position models.)
 
 3. 03_create_data_HMM.R
