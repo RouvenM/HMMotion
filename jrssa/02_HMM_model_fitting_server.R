@@ -52,7 +52,8 @@ res_dir <- if(TEST) here("results", "test") else here("results")
 dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
 if(TEST){
   set.seed(1)
-  test_plays <- sample(unique(data$game_play_id), getOption("hmmotion.test_n", 20))
+  all_plays <- unique(data$game_play_id)
+  test_plays <- sample(all_plays, min(length(all_plays), getOption("hmmotion.test_n", 20)))
   data <- data |> filter(game_play_id %in% test_plays)
   saveRDS(test_plays, file.path(res_dir, "test_plays.rds"))
 }
@@ -605,9 +606,20 @@ jnll = function(par){
 
 TMB::config(tmbad.sparse_hessian_compress = TRUE)
 
+# Optional (off by default): record matrix products as plain operations on the
+# tape, as suggested by RTMB's performance tip. This only changes how the tape
+# is built, not the model, the likelihood or the optimiser.
+# Switch on with options(hmmotion.matmul_plain = TRUE).
+if(isTRUE(getOption("hmmotion.matmul_plain", FALSE))){
+  TapeConfig(matmul = "plain")
+  cat("TapeConfig(matmul = 'plain') is on\n")
+}
+t_tape <- Sys.time()
+
 obj <- MakeADFun(jnll, par, 
                  random = c("beta_club", "beta_pos", "beta_play"))
 print("done")
+cat("Model set up (MakeADFun) in", format(round(Sys.time() - t_tape, 1)), "\n")
 
 # H <- obj2$env$spHess(random = TRUE)
 # SparseM::image(H)
@@ -637,6 +649,8 @@ n_eval <- 0
 fn_ckpt <- function(p){
   val <- obj$fn(p)
   n_eval <<- n_eval + 1
+  if(n_eval == 1) cat(format(Sys.time()), "| first evaluation done after",
+                      format(round(Sys.time() - t_tape, 1)), "| nll:", val, "\n")
   if(is.finite(val) && val < best$objective){
     best$objective <<- val
     best$par <<- p
