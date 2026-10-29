@@ -46,6 +46,10 @@ Run the scripts in this order:
    (results folder of the run, default results) and HMMOTION_MATMUL_PLAIN=1
    (TapeConfig(matmul = 'plain'): same likelihood, about 28% faster first
    evaluation in a local test with 200 plays, more memory).
+   Tried on LiDO (Oct 2026): with matmul = 'plain' the full model needed about
+   255 GB (vs. about 152 GB without) and the first evaluation was still not
+   finished after the 48 h limit of partition long, so a chain of 2-day jobs
+   cannot work. Use one ultralong job without the switch.
    (02b_HMM_model_fitting_exploratory.R: earlier homogeneous / team+position models.)
 
 3. 03_create_data_HMM.R
