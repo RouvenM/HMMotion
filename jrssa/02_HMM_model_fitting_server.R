@@ -19,11 +19,16 @@ source(here("jrssa", "settings.R"))
 # Quick test: run options(hmmotion.test = TRUE) before sourcing this script to
 # fit the model on a few random plays of week 1 (default 20, set with
 # options(hmmotion.test_n = ...)) and write to results/test/
-TEST <- isTRUE(getOption("hmmotion.test", FALSE))
+TEST <- isTRUE(getOption("hmmotion.test", FALSE)) || Sys.getenv("HMMOTION_TEST") == "1"
+# number of plays in test mode (option or environment variable HMMOTION_TEST_N)
+test_n <- as.integer(Sys.getenv("HMMOTION_TEST_N", getOption("hmmotion.test_n", 20)))
+# HMMOTION_STOP_AFTER_FIRST=1: stop after the first likelihood evaluation
+# (to measure the setup time, e.g. in a scaling test)
+stop_after_first <- Sys.getenv("HMMOTION_STOP_AFTER_FIRST") == "1"
 
 # Results folder: results/ by default; another one can be set with the
 # environment variable HMMOTION_RESULTS (e.g. for a second run in parallel)
-res_dir <- if(TEST) here("results", "test") else here(Sys.getenv("HMMOTION_RESULTS", "results"))
+res_dir <- here(Sys.getenv("HMMOTION_RESULTS", if(TEST) "results/test" else "results"))
 dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Chained SLURM jobs: stop right away once a previous job finished the fit
@@ -43,7 +48,8 @@ data <- vroom(hmm_file(1),
                 game_play_id = col_character()
               ))
 data$week = 1
-for (i in if(TEST) integer(0) else 2:9) {
+# test mode reads week 1 only (about 480 plays) unless more plays are needed
+for (i in if(TEST && test_n <= 400) integer(0) else 2:9) {
   data <- rbind(data, vroom(hmm_file(i),
                             col_types = list(
                               uniId = col_character(),
@@ -56,7 +62,8 @@ for (i in if(TEST) integer(0) else 2:9) {
 if(TEST){
   set.seed(1)
   all_plays <- unique(data$game_play_id)
-  test_plays <- sample(all_plays, min(length(all_plays), getOption("hmmotion.test_n", 20)))
+  test_plays <- sample(all_plays, min(length(all_plays), test_n))
+  cat("Test mode:", length(test_plays), "plays\n")
   data <- data |> filter(game_play_id %in% test_plays)
   saveRDS(test_plays, file.path(res_dir, "test_plays.rds"))
 }
@@ -655,6 +662,10 @@ fn_ckpt <- function(p){
   n_eval <<- n_eval + 1
   if(n_eval == 1) cat(format(Sys.time()), "| first evaluation done after",
                       format(round(Sys.time() - t_tape, 1)), "| nll:", val, "\n")
+  if(n_eval == 1 && stop_after_first){
+    cat("Stopping after the first evaluation (HMMOTION_STOP_AFTER_FIRST=1)\n")
+    quit(save = "no")
+  }
   if(is.finite(val) && val < best$objective){
     best$objective <<- val
     best$par <<- p
