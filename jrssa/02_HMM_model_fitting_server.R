@@ -41,6 +41,8 @@ if(!TEST && file.exists(file.path(res_dir, "HMM_DONE.txt"))){
 # chosen with 02a_lag_and_delta_selection.R: profile likelihood maximal at 4
 # (alpha = 2 and 8 about 50 log-likelihood units lower, alpha = 1 about 356)
 alpha_delta <- 4
+# override for tests: environment variable HMMOTION_ALPHA
+if(nzchar(Sys.getenv("HMMOTION_ALPHA"))) alpha_delta <- as.numeric(Sys.getenv("HMMOTION_ALPHA"))
 
 data <- vroom(hmm_file(1),
               col_types = list(
@@ -50,6 +52,8 @@ data <- vroom(hmm_file(1),
 data$week = 1
 # test mode reads only as many weeks as needed (about 480 plays per week)
 weeks_to_read <- if(TEST) seq_len(min(9, ceiling(test_n / 450))) else 1:9
+# override for tests: environment variable HMMOTION_WEEKS, e.g. "1" or "1,2"
+if(nzchar(Sys.getenv("HMMOTION_WEEKS"))) weeks_to_read <- as.integer(strsplit(Sys.getenv("HMMOTION_WEEKS"), ",")[[1]])
 for (i in setdiff(weeks_to_read, 1)) {
   data <- rbind(data, vroom(hmm_file(i),
                             col_types = list(
@@ -562,7 +566,8 @@ par = list(beta0 = -5,
 # previous mod_final_full.rds), start from its fixed-effect estimates, which
 # cuts the number of outer iterations
 start_file <- here("results", "mod_start.rds")  # shared by all runs
-if(file.exists(start_file)){
+# HMMOTION_NO_WARMSTART=1 starts from the default values (for tests)
+if(file.exists(start_file) && Sys.getenv("HMMOTION_NO_WARMSTART") != "1"){
   mod_start <- readRDS(start_file)
   par$beta0 <- as.numeric(mod_start$beta0)
   par$beta_dist <- as.numeric(mod_start$beta_dist)

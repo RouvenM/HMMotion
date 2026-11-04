@@ -8,7 +8,8 @@
 # 4 uses the complete output of 01 (lag 5 via 01b drops one row per track).
 HMM_LAG <- 4
 
-# HMM input file of a week written by 01
+# HMM input file of a week written by 01 (folder: rawdata/, or the one set with
+# the environment variable HMMOTION_DATA_DIR, e.g. for older data)
 hmm_file <- function(week){
-  here::here("rawdata", paste0("final_preprocessed_week_", week, "_lag", HMM_LAG, ".csv"))
+  here::here(Sys.getenv("HMMOTION_DATA_DIR", "rawdata"), paste0("final_preprocessed_week_", week, "_lag", HMM_LAG, ".csv"))
 }
