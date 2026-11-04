@@ -48,8 +48,9 @@ data <- vroom(hmm_file(1),
                 game_play_id = col_character()
               ))
 data$week = 1
-# test mode reads week 1 only (about 480 plays) unless more plays are needed
-for (i in if(TEST && test_n <= 400) integer(0) else 2:9) {
+# test mode reads only as many weeks as needed (about 480 plays per week)
+weeks_to_read <- if(TEST) seq_len(min(9, ceiling(test_n / 450))) else 1:9
+for (i in setdiff(weeks_to_read, 1)) {
   data <- rbind(data, vroom(hmm_file(i),
                             col_types = list(
                               uniId = col_character(),
