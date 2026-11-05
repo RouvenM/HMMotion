@@ -196,7 +196,7 @@ diff_tab |>
   xlab("") +
   labs(title = "**Differences in pre and post motion probability for predicting the correct defensive scheme**",
        subtitle = "*NFL Teams*") +
-  theme(axis.text.x = element_nfl_logo(size = 0.75))
+  theme(axis.text.x = nflplotR::element_nfl_logo(size = 0.75))
 
 library(Cairo)
 ggsave(here("results", "team_diffs.pdf"), height = 6, width = 12, scale = 0.9,device = cairo_pdf)
