@@ -80,8 +80,8 @@ zvm_models <- function(model_data,
       for(i in 1:nrow(param_grid)){
         params <- list(eval_metric = c("logloss"),
                        objective = "binary:logistic",
-                       eta = param_grid[i,1],
-                       max_depth = param_grid[i,2],
+                       eta = param_grid$eta[i],
+                       max_depth = param_grid$max_depth[i],
                        colsample_bynode = 0.3,
                        nthread = nthread)
         xgb_list[[i]] <- xgb.cv(params = params,data = xgb_mat,
@@ -89,21 +89,26 @@ zvm_models <- function(model_data,
                                 print_every_n = 100,early_stopping_rounds = 15,...)
         
       }
+      # best_iteration sits in $best_iteration (xgboost < 3) or
+      # $early_stop$best_iteration (xgboost >= 3)
+      best_iter <- function(r) if(!is.null(r$best_iteration)) r$best_iteration else r$early_stop$best_iteration
       cv_losses <- sapply(xgb_list,function(r){
-        iter <- r$best_iteration
-        r$evaluation_log[iter]$test_logloss_mean
+        r$evaluation_log$test_logloss_mean[best_iter(r)]
       })
       bpi <- which.min(cv_losses)
-      bp <- xgb_list[[bpi]]$params
-      nr <- xgb_list[[bpi]]$best_iteration
-      modu <- xgboost(xgb_mat, max_depth = param_grid[bpi,2], eta = param_grid[bpi,1],
-                      nrounds = nr, gamma = 0.5,colsample_bynode = 0.3, objective = "binary:logistic",
-                      nthread = nthread,
-                      ...)
+      nr <- best_iter(xgb_list[[bpi]])
+      # xgb.train has the same interface in old and new xgboost versions
+      modu <- xgb.train(params = list(objective = "binary:logistic",
+                                      max_depth = param_grid$max_depth[bpi],
+                                      eta = param_grid$eta[bpi],
+                                      gamma = 0.5, colsample_bynode = 0.3,
+                                      nthread = nthread),
+                        data = xgb_mat, nrounds = nr, ...)
     }else{
-      modu <- xgboost(xgb_mat,
-                      nrounds = nr, gamma = 0.5,colsample_bynode = 0.3, objective = "binary:logistic",
-                      ...)
+      modu <- xgb.train(params = list(objective = "binary:logistic",
+                                      gamma = 0.5, colsample_bynode = 0.3,
+                                      nthread = nthread),
+                        data = xgb_mat, nrounds = 100, ...)
     }
     
     xgb_test <- xgboost::xgb.DMatrix(as.matrix(dta_test |> select(-pff_manZone_num)),

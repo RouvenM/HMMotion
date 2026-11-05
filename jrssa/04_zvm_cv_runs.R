@@ -26,7 +26,7 @@ source(here("jrssa", "zvm_models.R"))
 # features, 2 repetitions, a small XGBoost grid and 2 test weeks, and writes to
 # results/test/. It checks the pipeline (cross-fitting, LOWO, parallel workers,
 # saving) without the HMM fit.
-TEST <- isTRUE(getOption("hmmotion.test", FALSE))
+TEST <- isTRUE(getOption("hmmotion.test", FALSE)) || Sys.getenv("HMMOTION_TEST") == "1"
 res_dir <- if(TEST) here("results", "test") else here("results")
 dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
 test_grid <- if(TEST) expand_grid(eta = 0.3, max_depth = c(1, 3)) else NULL
