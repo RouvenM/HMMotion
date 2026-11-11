@@ -468,50 +468,50 @@ We transformed the state probabilities into the metrics described in Section~\re
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figures/plots/all_losses_cross_fitting.pdf}
-    \caption{Boxplots of the different loss metrics (left subpanel: accuracies; middle: AUC; right: negative logloss) obtained from ten different runs of the cross fitting procedure. Each panel contains the results from the elastic net (\texttt{glmnet}) on the left and the XGBoost model, on the right.}
+    \caption{Boxplots of the different loss metrics (left subpanel: accuracies; middle: AUC; right: negative logloss) obtained from 50 different runs of the cross fitting procedure. Each panel contains the results from the elastic net (\texttt{glmnet}) on the left and the XGBoost model, on the right.}
     \label{fig:loss_metrics}
 \end{figure}
 
 As described in Section \ref{sec:model_eval}, we first compare the performance of the baseline model using only pre-motion features with the model using additional naive post-motion features, % (denoted by ``naive''), 
 and the model using all previous features and the HMM-derived features. % (denoted by \textit{HMM}). 
-Since we are working with a small data set, we implement a cross-fitting strategy to obtain out-of-sample predictions for each observation. Specifically, we randomly split the full data into five folds. For each fold, we train a model on all data except the data contained in the selected fold.  Both model classes --- the elastic‑net and XGBoost models --- require specification of hyperparameters; therefore, within each training iteration we perform 5‑fold cross-validation on the remaining four folds to tune these parameters. More precisely, we use a pre-defined grid to tune \( \lambda \) and $\alpha$ for the elastic net, and tree depth, learning rate, and number of boosting rounds for XGBoost, with all remaining XGBoost parameters set to the values of the final model. The tuned models are then used to generate predictions for all observations in the left-out fold. Repeating this procedure yields out-of-sample predictions for every play in the data set. Hereby, we can compare our three models using the different loss metrics (accuracy, AUC, and logloss) on unseen data. However, because cross‑fitting involves random partitioning into five folds and further random splits during inner cross-validation for hyperparameter tuning, estimates of out‑of‑sample losses may vary depending on these random draws. To address this source of uncertainty, we repeat the entire cross-fitting routine ten times and report resulting distributions of loss metrics rather than a single value from one random split. Since all models are evaluated on the same partitions, we compare them by paired differences.
+Since we are working with a small data set, we implement a cross-fitting strategy to obtain out-of-sample predictions for each observation. Specifically, we randomly split the full data into five folds. For each fold, we train a model on all data except the data contained in the selected fold.  Both model classes --- the elastic‑net and XGBoost models --- require specification of hyperparameters; therefore, within each training iteration we perform 5‑fold cross-validation on the remaining four folds to tune these parameters. More precisely, we use a pre-defined grid to tune \( \lambda \) and $\alpha$ for the elastic net, and tree depth, learning rate, column subsampling rate, minimum loss reduction for a split, and number of boosting rounds for XGBoost. The tuned models are then used to generate predictions for all observations in the left-out fold. Repeating this procedure yields out-of-sample predictions for every play in the data set. Hereby, we can compare our three models using the different loss metrics (accuracy, AUC, and logloss) on unseen data. However, because cross‑fitting involves random partitioning into five folds and further random splits during inner cross-validation for hyperparameter tuning, estimates of out‑of‑sample losses may vary depending on these random draws. To address this source of uncertainty, we repeat the entire cross-fitting routine 50 times and report resulting distributions of loss metrics rather than a single value from one random split. Since all models are evaluated on the same partitions, we compare them by paired differences.
 
 %For both models, we conduct 10-fold cross-validation over a pre-defined hyperparameter grid to identify optimal values of \( \lambda \) and $\alpha$ (for the logistic elastic net), as well as tree depth, learning rate, and number of boosting rounds (for the XGBoost model).
 
-Figure~\ref{fig:loss_metrics} and Table~\ref{tab:perf} display the results of the cross-fitting loss evaluation procedure, and Table~\ref{tab:paired} the paired differences between the models. Both model classes perform very similarly. The pre-motion models perform worst, suggesting that even a naive incorporation of motion information substantially improves prediction of the defensive coverage scheme: in every run, the naive post-motion features reduce the logloss by about 0.036 (elastic net) and 0.031 (XGBoost), and increase the AUC by about 0.035 and 0.033 and the accuracy by about 1.7 and 1.4 percentage points, respectively. Including HMM-derived features further improves the elastic net slightly but consistently (logloss $-0.0015$ in all ten runs, AUC $+0.0008$ in nine of ten runs), whereas its accuracy is virtually unchanged. For XGBoost, in contrast, the HMM features slightly increase the logloss ($+0.0021$ in all ten runs), so that the elastic net with HMM features and the XGBoost model with naive post-motion features reach the same logloss of 0.399. Hence, much of the information that the HMM features carry about the coverage scheme is already contained in simpler summaries of the motion. With $M = 4344$ plays and a minority class of 25\%, however, out-of-sample loss metrics are a coarse instrument to detect a weak but genuine signal, as any gain is small relative to the variance that additional features introduce, in particular for flexible learners such as XGBoost. We therefore assess more directly whether the HMM features carry information about the coverage scheme that is not contained in the other features.
+Figure~\ref{fig:loss_metrics} and Table~\ref{tab:perf} display the results of the cross-fitting loss evaluation procedure, and Table~\ref{tab:paired} the paired differences between the models. Both model classes perform very similarly. The pre-motion models perform worst, suggesting that even a naive incorporation of motion information substantially improves prediction of the defensive coverage scheme: in every run, the naive post-motion features reduce the logloss by about 0.036 (elastic net) and 0.031 (XGBoost), and increase the AUC by about 0.035 and 0.032 and the accuracy by about 1.7 and 1.6 percentage points, respectively. Including HMM-derived features further improves the elastic net slightly but consistently (logloss $-0.0015$ and AUC $+0.0009$ in all 50 runs), whereas its accuracy is virtually unchanged. For XGBoost, in contrast, the HMM features do not improve the predictions (logloss $+0.0009$ on average, lower in 18 of 50 runs), so that the elastic net with HMM features and the XGBoost model with naive post-motion features reach the same logloss of 0.399. Hence, much of the information that the HMM features carry about the coverage scheme is already contained in simpler summaries of the motion. With $M = 4344$ plays and a minority class of 25\%, however, out-of-sample loss metrics are a coarse instrument to detect a weak but genuine signal, as any gain is small relative to the variance that additional features introduce, in particular for flexible learners such as XGBoost. We therefore assess more directly whether the HMM features carry information about the coverage scheme that is not contained in the other features.
 
 \begin{table}[t!]
 \centering
-\caption{Out-of-sample loss metrics (mean and, in brackets, standard deviation over ten runs of the cross-fitting procedure) of the models with pre-motion features (pre), pre- and naive post-motion features (naive), and additionally the HMM features (HMM).}
+\caption{Out-of-sample loss metrics (mean and, in brackets, standard deviation over 50 runs of the cross-fitting procedure) of the models with pre-motion features (pre), pre- and naive post-motion features (naive), and additionally the HMM features (HMM).}
 \label{tab:perf}
 \begin{tabular}{llccc}
 \hline
 Model & Features & Accuracy & AUC & Logloss \\
 \hline
-Elastic net & pre & 0.811 (0.001) & 0.808 (0.001) & 0.437 (0.001) \\
- & naive & 0.828 (0.002) & 0.843 (0.001) & 0.401 (0.001) \\
+Elastic net & pre & 0.812 (0.002) & 0.807 (0.001) & 0.437 (0.001) \\
+ & naive & 0.828 (0.001) & 0.843 (0.001) & 0.401 (0.001) \\
  & HMM & 0.828 (0.001) & 0.844 (0.001) & 0.399 (0.001) \\
-XGBoost & pre & 0.811 (0.002) & 0.811 (0.002) & 0.430 (0.002) \\
- & naive & 0.825 (0.003) & 0.844 (0.003) & 0.399 (0.002) \\
- & HMM & 0.825 (0.002) & 0.841 (0.002) & 0.401 (0.002) \\
+XGBoost & pre & 0.811 (0.002) & 0.812 (0.003) & 0.430 (0.002) \\
+ & naive & 0.827 (0.002) & 0.843 (0.003) & 0.399 (0.002) \\
+ & HMM & 0.827 (0.002) & 0.842 (0.002) & 0.400 (0.002) \\
 \hline
 \end{tabular}
 \end{table}
 
 \begin{table}[t!]
 \centering
-\caption{Paired differences between the models over the ten runs of the cross-fitting procedure: mean and, in brackets, 2.5\% and 97.5\% quantiles. Positive differences in accuracy and AUC and negative differences in the logloss indicate an improvement.}
+\caption{Paired differences between the models over the 50 runs of the cross-fitting procedure: mean and, in brackets, 2.5\% and 97.5\% quantiles. Positive differences in accuracy and AUC and negative differences in the logloss indicate an improvement.}
 \label{tab:paired}
 \begin{tabular}{llcc}
 \hline
 Model & Metric & naive $-$ pre & HMM $-$ naive \\
 \hline
-Elastic net & Accuracy & 0.0173 [0.0148, 0.0192] & 0.0002 [$-$0.0010, 0.0011] \\
- & AUC & 0.0352 [0.0345, 0.0363] & 0.0008 [0.0001, 0.0011] \\
- & Logloss & $-$0.0363 [$-$0.0383, $-$0.0351] & $-$0.0015 [$-$0.0019, $-$0.0010] \\
-XGBoost & Accuracy & 0.0136 [0.0085, 0.0177] & $-$0.0002 [$-$0.0056, 0.0031] \\
- & AUC & 0.0329 [0.0275, 0.0360] & $-$0.0021 [$-$0.0055, 0.0003] \\
- & Logloss & $-$0.0312 [$-$0.0340, $-$0.0263] & 0.0021 [0.0003, 0.0048] \\
+Elastic net & Accuracy & 0.0166 [0.0127, 0.0197] & 0.0002 [$-$0.0027, 0.0037] \\
+ & AUC & 0.0354 [0.0339, 0.0366] & 0.0009 [0.0002, 0.0015] \\
+ & Logloss & $-$0.0365 [$-$0.0379, $-$0.0351] & $-$0.0015 [$-$0.0022, $-$0.0009] \\
+XGBoost & Accuracy & 0.0163 [0.0102, 0.0213] & 0.0002 [$-$0.0027, 0.0035] \\
+ & AUC & 0.0319 [0.0273, 0.0372] & $-$0.0011 [$-$0.0044, 0.0030] \\
+ & Logloss & $-$0.0307 [$-$0.0357, $-$0.0269] & 0.0009 [$-$0.0029, 0.0047] \\
 \hline
 \end{tabular}
 \end{table}
