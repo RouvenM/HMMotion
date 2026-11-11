@@ -12,6 +12,7 @@
 ####     team_diffs.pdf                                   (from 05)
 ####     re_def.pdf                                       (team random effects)
 ####     snapshot.pdf                                     (example play)
+####     paired_diffs.pdf                                 (paired logloss differences)
 ####
 #### Sections (each can be switched off below)
 ####   1  data: number of plays, man / zone
@@ -296,6 +297,23 @@ paired |>
             .groups = "drop") |>
   mutate(across(mean:max, \(v) round(v, 4))) |>
   as.data.frame() |> print(row.names = FALSE)
+
+# figure: paired logloss differences per repetition (own y-axis per panel, as the
+# naive - pre effect is an order of magnitude larger than HMM - naive)
+p_paired <- paired |>
+  filter(metric == "logloss", comparison %in% c("naive - pre", "HMM - naive")) |>
+  mutate(comparison = factor(comparison, levels = c("naive - pre", "HMM - naive"),
+                             labels = c("Naive post-motion vs. pre-motion features",
+                                        "HMM features vs. naive post-motion features")),
+         mod = factor(mod, levels = c("glmnet", "xgboost"), labels = c("Elastic net", "XGBoost"))) |>
+  ggplot(aes(x = mod, y = diff)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "darkred") +
+  geom_boxplot(width = 0.5, outlier.shape = NA, colour = "gray40") +
+  geom_point(position = position_jitter(width = 0.08, height = 0, seed = 1), size = 1.8) +
+  facet_wrap(~comparison, scales = "free_y") +
+  labs(x = NULL, y = "Paired difference in logloss") +
+  theme_bw(base_size = 12)
+save_fig(p_paired, "paired_diffs.pdf", width = 8, height = 3.8)
 
 lowo <- readRDS(file.path(res_dir, "zvm_lowo_runs.rds"))
 cat("\nLeave-one-week-out (rows = test weeks in order):\n")
