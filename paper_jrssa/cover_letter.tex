@@ -1,0 +1,35 @@
+\documentclass[11pt,a4paper]{letter}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{lmodern}
+\usepackage{hyperref}
+
+\signature{Rouven Michels\\ on behalf of all authors}
+\address{Rouven Michels\\ TU Dortmund University\\ Department of Statistics\\ 44221 Dortmund, Germany\\ rouven.michels@tu-dortmund.de}
+\date{\today}
+
+\begin{document}
+
+\begin{letter}{The Guest Editors\\ JRSS-A Sport Data Science Special Issue\\ Journal of the Royal Statistical Society Series A: Statistics in Society}
+
+\opening{Dear Guest Editors,}
+
+we would like to submit our manuscript ``Latent Guarding Assignments from Player Tracking Data: A Hidden Markov Model for Reading Defensive Coverage Schemes in American Football'' by Rouven Michels, Robert Bajons and Jan-Ole Fischer for consideration in the \textbf{JRSS-A Sport Data Science Special Issue}.
+
+Before the snap, offenses in American football use pre-snap motion to find out whether the defense plays man or zone coverage, while defenses try to disguise their assignments. Our manuscript makes this reading of the defense explicit. We propose a non-homogeneous hidden Markov model with random effects for defensive roles, teams and plays that infers, from player tracking data of the 2022 NFL season, which offensive player each defender guards during the motion. The model is directly interpretable: it quantifies the defenders' reaction time (about 0.4 seconds), the persistence of guarding assignments, and how persistence differs between positions, teams and plays, all with measures of uncertainty. Features for the prediction of the coverage scheme are derived as expectations under the posterior distribution of the latent assignments, so that the uncertainty of the inferred assignments is carried into the subsequent analysis. We evaluate these features by repeated cross-fitting of elastic net and gradient-boosted tree models and by conditional independence tests based on the Generalised Covariance Measure, which also reveal the direction of the association.
+
+We believe the manuscript fits the special issue well, as it combines a latent-variable model for high-frequency tracking data with machine learning and modern conditional independence testing to answer a question that coaches and analysts address daily by film study. We report the results candidly: pre-snap motion clearly improves the prediction of the coverage scheme, and the HMM features carry information beyond simple motion summaries, but their additional predictive value is small. The main value of the latent-state model lies in what it reveals about defensive behaviour, for example that cornerbacks keep their assignments while linebackers pass them off, and that plays differ far more than teams.
+
+The tracking and play-by-play data are publicly available from the NFL Big Data Bowl 2025, and all code to reproduce the analysis is available at \url{https://github.com/RouvenM/HMMotion}.
+
+One of the guest editors, Andreas Groll, is a colleague of the first author at TU Dortmund University. He has not been involved in this work in any way. We understand that the editorial decision on this submission will be made by one of the other guest editors.
+
+The manuscript is not under consideration elsewhere, and all authors have approved its submission. We declare no competing interests.
+
+Thank you for considering our manuscript. We look forward to hearing from you.
+
+\closing{Yours sincerely,}
+
+\end{letter}
+\end{document}
