@@ -122,7 +122,7 @@ The paper is organized as follows. Section~\ref{sec:data} describes the data. Se
     \label{fig:prepro}
 \end{figure}
 
-The analysis is based on data provided as part of the NFL Big Data Bowl (BDB) 2025, namely tracking data, sampled at 10 Hz, and play-by-play data from the first nine weeks of the 2022 NFL season. While the former provides the locations of every player on the field during a play, the latter contains contextual information on the respective plays. As we are interested in pre-snap player movements, we concentrate on plays that contain pre-snap motion of the offense. For each play, the time series starts at the first time the offense is set (event \texttt{line\_set}) and ends at the snap. We exclude plays from jumbo and wildcat formations, plays with more than five offensive linemen or with two quarterbacks on the field, and very short plays. Ultimately, we end up with $M = 4{,}344$ offensive plays, of which the defenses played \todo[inline]{insert numbers of zone and man plays} in zone and in man coverage.
+The analysis is based on data provided as part of the NFL Big Data Bowl (BDB) 2025, namely tracking data, sampled at 10 Hz, and play-by-play data from the first nine weeks of the 2022 NFL season. While the former provides the locations of every player on the field during a play, the latter contains contextual information on the respective plays. As we are interested in pre-snap player movements, we concentrate on plays that contain pre-snap motion of the offense. For each play, the time series starts at the first time the offense is set (event \texttt{line\_set}) and ends at the snap. We exclude plays from jumbo and wildcat formations, plays with more than five offensive linemen or with two quarterbacks on the field, and very short plays. Ultimately, we end up with $M = 4{,}344$ offensive plays, of which the defenses played 3{,}252 (74.9\%) in zone and 1{,}092 (25.1\%) in man coverage.
 
 Our modeling framework is structured into three stages: a pre-motion model, a naive post-motion model, and a post-motion model including HMM features. Thereby, the amount of available information progressively increases. Each subsequent stage builds upon the data used in the previous models.
 Starting with the creation of the pre-motion data set, we first extract information from the play-by-play data, specifically the current quarter, down, yards to go, yardline, home and away scores, the remaining seconds in the current half, and, most importantly, whether the defense played man- or zone coverage\footnote{Note that this information is itself provided by the company Pro Football Focus as part of the NFL BDB data.}. In addition, we create different features derived from the tracking data that describe the situation before any player motions. In particular, we first compute the area spanned by the convex hull of all players from both teams, as well as the largest y-distance (i.e., the width of the hull) and the largest x-distance (i.e., the length of the hull) of both convex hulls.
@@ -298,7 +298,7 @@ Parameter & Estimate & Std.\ error & 95\% CI \\
 \hline
 $\beta_0$ (intercept) & $-2.993$ & 0.069 & $[-3.128, -2.858]$ \\
 $\beta_1$ (distance, per yard) & $-0.853$ & 0.011 & $[-0.874, -0.832]$ \\
-$\sigma$ (yards) & 1.910 & 0.001 & $[1.908, 1.912]$ \\
+$\sigma$ (yards) & 1.911 & 0.001 & $[1.908, 1.913]$ \\
 $\sigma_{\text{role}}$ & 0.142 & 0.042 & $[0.080, 0.254]$ \\
 $\sigma_{\text{defense}}$ & 0.117 & 0.024 & $[0.079, 0.174]$ \\
 $\sigma_{\text{play}}$ & 0.546 & 0.021 & $[0.505, 0.589]$ \\
@@ -306,30 +306,29 @@ $\sigma_{\text{play}}$ & 0.546 & 0.021 & $[0.505, 0.589]$ \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:position_effects} summarizes the predicted random effects of the defensive roles. Consistent with visual observation, cornerbacks keep their guarding assignments most persistently, whereas linebackers pass them off most often; safeties lie in between.
+Table~\ref{tab:position_effects} summarizes the predicted random effects of the defensive roles. Consistent with visual observation, cornerbacks keep their guarding assignments most persistently, whereas linebackers pass them off most often; safeties lie in between. The difference between cornerbacks and linebackers (about 0.4 on the logit scale) is large relative to the prediction standard errors of 0.06--0.08.
 
 \begin{table}[t!]
 \centering
-\caption{Predicted random effects of the defensive roles. Smaller values correspond to a higher probability of continuing to guard the same offensive player.}
+\caption{Predicted random effects of the defensive roles with prediction standard errors. Smaller values correspond to a higher probability of continuing to guard the same offensive player.}
 \label{tab:position_effects}
-\begin{tabular}{lr}
+\begin{tabular}{lrr}
 \hline
-Role & Predicted effect \\
+Role & Predicted effect & Std.\ error \\
 \hline
-Cornerback & $-0.207$ \\
-Free Safety & $-0.038$ \\
-Strong Safety & $0.112$ \\
-Middle Linebacker & $0.153$ \\
-Inside Linebacker & $0.182$ \\
-Outside Linebacker & $0.224$ \\
+Cornerback & $-0.207$ & 0.064 \\
+Free Safety & $-0.038$ & 0.076 \\
+Strong Safety & $0.112$ & 0.075 \\
+Middle Linebacker & $0.153$ & 0.081 \\
+Inside Linebacker & $0.182$ & 0.065 \\
+Outside Linebacker & $0.224$ & 0.071 \\
 \hline
 \end{tabular}
 \end{table}
 
-Section~5 of the Supplementary Material displays the predicted random effects for all defensive teams.
+The predicted effects of the defensive teams range from $-0.16$ (Carolina) to $0.24$ (Seattle), but their prediction standard errors of 0.07--0.09 are of a similar size, so that only the most extreme teams are clearly distinguishable (Section~5 of the Supplementary Material).
 
-To illustrate the transition dynamics, we report the estimated t.p.m.\ for Marco Wilson, a cornerback of the Arizona Cardinals, in the play shown in Figure~\ref{fig:prepro}, at the moment when Mecole Hardman (MH) --- the player Marco Wilson is covering --- crosses running back Jerick McKinnon (JMK). Although Wilson is momentarily as close to McKinnon as to Hardman, his estimated tendency to stay with Hardman remains high (see $\hat{\gamma}_{11}$), reflecting the persistence of man-to-man coverage.
-\todo[inline]{Recompute this t.p.m.\ and Figure~\ref{fig:snap} with the new model (results/mod\_final\_full.rds); the values below are from the AoAS version.}
+To illustrate the transition dynamics, we report the estimated t.p.m.\ for Marco Wilson, a cornerback of the Arizona Cardinals, in the play shown in Figure~\ref{fig:prepro}, at the moment when Mecole Hardman (MH) --- the player Marco Wilson is covering --- crosses running back Jerick McKinnon (JMK). Although Wilson is momentarily as close to McKinnon as to Hardman, his estimated probability of staying with Hardman remains high (see $\hat{\gamma}_{11}$), and the posterior probability that he guards Hardman at this moment is 0.997, reflecting the persistence of man-to-man coverage.
 
 $$
 \renewcommand{\arraystretch}{1.2}
@@ -352,9 +351,9 @@ $$
     &
     \left(
       \begin{array}{ccccc}
-      0.983 & 0.002 & 0.015 & 0.000 & 0.000 \\
-      0.002 & 0.997 & 0.002 & 0.000 & 0.000 \\
-      0.015 & 0.002 & 0.983 & 0.000 & 0.000 \\
+      0.974 & 0.001 & 0.025 & 0.000 & 0.000 \\
+      0.001 & 0.998 & 0.001 & 0.000 & 0.000 \\
+      0.025 & 0.001 & 0.974 & 0.000 & 0.000 \\
       0.000 & 0.000 & 0.000 & 1.000 & 0.000 \\
       0.000 & 0.000 & 0.000 & 0.000 & 1.000
       \end{array}
@@ -371,7 +370,7 @@ $$
 
 Figure~\ref{fig:snap} illustrates how the HMM captures Marco Wilson's guarding assignment\footnote{A complete animation of the sequence is provided as supplementary material.}. When Wilson reaches the same $\mathrm{y}$-coordinate as running back Jerick McKinnon, the HMM maintains the correct assignment as a consequence of its temporal persistence, whereas a clustering based solely on spatial proximity would suggest a change in guarding assignment.
 
-Table~\ref{tab:state_decod} summarizes the HMM features. As they are posterior expectations, the number of switches and of switching defenders are not integers; a defender whose assignment is ambiguous contributes partially to the number of switches.
+Table~\ref{tab:state_decod} summarizes the HMM features. As they are posterior expectations, the number of switches and of switching defenders are not integers; a defender whose assignment is ambiguous contributes partially to the number of switches. On average, plays in man coverage show fewer expected switches (1.85 vs.\ 2.22 in zone coverage), fewer switching defenders (1.30 vs.\ 1.62), a lower mean entropy (0.17 vs.\ 0.21) and a lower play-specific random effect ($-0.04$ vs.\ $0.02$).
 
 \begin{table}[t!]
 \caption{Summary statistics of the play-level HMM features.}
@@ -393,26 +392,25 @@ Max. & 16.81 & 5.00 & 0.91 & 1.26\\
 
 \subsection{Coverage models}
 
-Table~\ref{tab:perf} reports the out-of-sample performance of the coverage models over the ten repetitions of the cross-fitting, and Table~\ref{tab:paired} the paired differences between the feature sets. Pre-snap motion substantially improves the prediction of the coverage scheme: adding the naive post-motion features reduces the logloss by 0.036 (elastic net) and 0.031 (XGBoost), increases the AUC by 0.035 and 0.032, and the accuracy by 1.7 and 1.5 percentage points, consistently across all repetitions.\todo{verify: all reps} Adding the HMM features improves the elastic net slightly but consistently (logloss $-0.0015$, AUC $+0.0008$ in all repetitions), whereas XGBoost does not benefit. Both model classes perform very similarly. In the leave-one-week-out evaluation of the XGBoost models, the naive post-motion features improve the logloss in all nine weeks (mean logloss 0.403 vs.\ 0.428 for the pre-motion model), whereas the HMM features improve it in four of nine weeks (mean 0.404). Hence, the information that the HMM features carry about the coverage scheme is to a large extent already contained in simpler summaries of the motion.
+Table~\ref{tab:perf} reports the out-of-sample performance of the coverage models over the ten repetitions of the cross-fitting, and Table~\ref{tab:paired} and Figure~\ref{fig:paired} the paired differences between the feature sets. Pre-snap motion substantially improves the prediction of the coverage scheme: adding the naive post-motion features reduces the logloss by 0.036 (elastic net) and 0.031 (XGBoost), increases the AUC by 0.035 and 0.032, and the accuracy by 1.7 and 1.5 percentage points, in each of the ten repetitions. Adding the HMM features improves the elastic net slightly but consistently (logloss $-0.0015$ in all ten repetitions, AUC $+0.0008$ in nine of ten), whereas XGBoost does not benefit (logloss improved in one of ten repetitions). Both model classes perform very similarly. In the leave-one-week-out evaluation of the XGBoost models, the naive post-motion features improve the logloss in all nine weeks (mean logloss 0.403 vs.\ 0.428 for the pre-motion model), whereas the HMM features improve it in only four of nine weeks (mean 0.404). Hence, the information that the HMM features carry about the coverage scheme is to a large extent already contained in simpler summaries of the motion. Still, the elastic net, whose regularisation suits a large number of weak features, improves in every repetition (Figure~\ref{fig:paired}). With 4,344 plays and a minority class of 25\%, out-of-sample metrics are a coarse instrument to detect a weak but genuine signal: any gain is small relative to the variance that additional features introduce, in particular for flexible learners such as XGBoost. We therefore assess more directly whether the HMM features carry information about the coverage scheme that is not contained in the other features, using conditional independence tests.
 
 \begin{table}[t!]
 \centering
-\caption{Out-of-sample performance (mean over ten repetitions of five-fold cross-fitting) of the coverage models with pre-motion features (pre), pre- and naive post-motion features (naive), and additionally the HMM features (HMM).}
+\caption{Out-of-sample performance (mean and, in brackets, standard deviation over ten repetitions of five-fold cross-fitting) of the coverage models with pre-motion features (pre), pre- and naive post-motion features (naive), and additionally the HMM features (HMM).}
 \label{tab:perf}
 \begin{tabular}{llccc}
 \hline
 Model & Features & Accuracy & AUC & Logloss \\
 \hline
-Elastic net & pre & 0.811 & 0.808 & 0.437 \\
- & naive & 0.828 & 0.843 & 0.401 \\
- & HMM & 0.828 & 0.844 & 0.399 \\
-XGBoost & pre & 0.811 & 0.811 & 0.430 \\
- & naive & 0.826 & 0.843 & 0.400 \\
- & HMM & 0.826 & 0.842 & 0.400 \\
+Elastic net & pre & 0.811 (0.001) & 0.808 (0.001) & 0.437 (0.001) \\
+ & naive & 0.828 (0.002) & 0.843 (0.001) & 0.401 (0.001) \\
+ & HMM & 0.828 (0.001) & 0.844 (0.001) & 0.399 (0.001) \\
+XGBoost & pre & 0.811 (0.003) & 0.811 (0.003) & 0.430 (0.002) \\
+ & naive & 0.826 (0.002) & 0.843 (0.003) & 0.400 (0.002) \\
+ & HMM & 0.826 (0.003) & 0.842 (0.003) & 0.400 (0.002) \\
 \hline
 \end{tabular}
 \end{table}
-\todo[inline]{Add standard deviations over the repetitions (results/zvm\_crossfit\_runs.rds).}
 
 \begin{table}[t!]
 \centering
@@ -422,16 +420,22 @@ XGBoost & pre & 0.811 & 0.811 & 0.430 \\
 \hline
 Model & Metric & naive $-$ pre & HMM $-$ naive \\
 \hline
-Elastic net & Accuracy & 0.0173 & 0.0003 [$-$0.0009, 0.0013] \\
- & AUC & 0.0352 & 0.0008 [0.0001, 0.0011] \\
- & Logloss & $-$0.0363 & $-$0.0015 [$-$0.0019, $-$0.0009] \\
-XGBoost & Accuracy & 0.0153 & 0.0003 [$-$0.0029, 0.0039] \\
- & AUC & 0.0323 & $-$0.0010 [$-$0.0040, 0.0021] \\
- & Logloss & $-$0.0305 & 0.0007 [$-$0.0019, 0.0027] \\
+Elastic net & Accuracy & 0.0173 [0.0148, 0.0192] & 0.0003 [$-$0.0009, 0.0013] \\
+ & AUC & 0.0352 [0.0345, 0.0363] & 0.0008 [0.0001, 0.0011] \\
+ & Logloss & $-$0.0363 [$-$0.0383, $-$0.0351] & $-$0.0015 [$-$0.0019, $-$0.0009] \\
+XGBoost & Accuracy & 0.0153 [0.0103, 0.0203] & 0.0003 [$-$0.0029, 0.0039] \\
+ & AUC & 0.0323 [0.0285, 0.0359] & $-$0.0010 [$-$0.0040, 0.0021] \\
+ & Logloss & $-$0.0305 [$-$0.0342, $-$0.0271] & 0.0007 [$-$0.0019, 0.0027] \\
 \hline
 \end{tabular}
 \end{table}
-\todo[inline]{Add the quantiles for naive $-$ pre (all repetitions improved).}
+
+\begin{figure}[t!]
+    \centering
+    \includegraphics[width=\linewidth]{figures/plots/paired_diffs.pdf}
+    \caption{Paired differences in the out-of-sample logloss between feature sets for each of the ten repetitions of the cross-fitting (points). Negative values indicate an improvement by the additional features. Note the different scales of the two panels.}
+    \label{fig:paired}
+\end{figure}
 
 \begin{figure}
     \centering
@@ -446,7 +450,6 @@ XGBoost & Accuracy & 0.0153 & 0.0003 [$-$0.0029, 0.0039] \\
     \caption{Unnormalized statistics of the marginal GCM tests of each HMM feature given the pre- and naive post-motion features, with 95\% confidence intervals. The vertical dashed line corresponds to zero.}
     \label{fig:sig2}
 \end{figure}
-\todo[inline]{Replace Figures~\ref{fig:sig1} and~\ref{fig:sig2} by the new versions (jrssa/fig\_gcm.R).}
 
 The GCM tests show that the HMM features nevertheless carry information about the coverage scheme beyond the naive motion features. In the partial omnibus test, the four HMM features are jointly significantly associated with the coverage scheme given the pre- and naive post-motion features ($p = 0.009$, Figure~\ref{fig:sig1}). None of them is significant individually given the other three ($p$-values between 0.13 and 0.81), which reflects their strong correlation: together they carry information, but each can largely be replaced by the others. In the marginal tests, i.e.\ given the pre- and naive post-motion features only, each HMM feature is significantly associated with the coverage scheme, also after a Bonferroni correction for four tests (play random effect $p = 0.0008$, mean entropy $p = 0.002$, expected number of switching defenders $p = 0.003$, expected number of switches $p = 0.004$). All test statistics are negative (Figure~\ref{fig:sig2}), i.e.\ in the partially linear logistic model of Eq.~\eqref{eq:pllm_lo}, more switches, more uncertain assignments and a higher switching tendency of the play are associated with a lower probability of man coverage. This matches the intuition that defenders in man coverage stay with their offensive player, whereas defenders in zone coverage pass them off.
 
@@ -459,40 +462,38 @@ The GCM tests show that the HMM features nevertheless carry information about th
     \caption{Differences in the predicted probability of the correct defensive scheme between the model with motion and HMM features and the model with pre-motion features only, for each play of each offense. Teams are ordered by the medians of the boxplots.}
     \label{fig:teamdiff}
 \end{figure}
-\todo[inline]{Replace Figure~\ref{fig:teamdiff} by results/team\_diffs.pdf from the new run.}
 
 Finally, we use the coverage models to evaluate how much information the offenses gain about the defensive scheme from their pre-snap motion. We compare the predictions of the pre-motion XGBoost model with those of the XGBoost model including the motion and HMM features. To avoid information leakage, we use a leave-one-team-out approach: for each team, all of its offensive plays are excluded during model training and hyperparameter tuning, and the two models trained on the plays of all other teams predict the plays of the omitted team. If pre-snap motion reveals the defensive scheme, the model including motion should assign a higher probability to the correct scheme than the pre-motion model. Note that this measures how informative the motion of an offense is about the defensive scheme for the model, not directly how well the offense itself recognizes the scheme.
 
-Figure~\ref{fig:teamdiff} shows the differences per play and team, and Table~\ref{tab:teams} lists the ten teams with the largest share of motion plays in which the model including motion assigned a higher probability to the correct scheme. For most teams, the motion features increase the probability of the correct scheme. Kansas City, San Francisco and Atlanta --- all known for their frequent use of pre-snap motion --- are again among the teams with the largest information gain. The shares of the leading teams are, however, close to each other and their confidence intervals overlap considerably, so that the ranking should not be over-interpreted.
+Figure~\ref{fig:teamdiff} shows the differences per play and team, and Table~\ref{tab:teams} lists the ten teams with the largest share of motion plays in which the model including motion assigned a higher probability to the correct scheme. Overall, the model including motion assigns a higher probability to the correct scheme in 62\% of the motion plays, and the share exceeds one half for all teams except Las Vegas (47\%). Kansas City, San Francisco and Atlanta --- all known for their frequent use of pre-snap motion --- are again among the teams with the largest information gain. The shares of the leading teams are, however, close to each other and their confidence intervals overlap considerably, so that the ranking should not be over-interpreted.
 
 \begin{table}[t!]
 \centering
-\caption{The ten offenses with the largest share of motion plays in which the model including motion assigned a higher probability to the correct defensive scheme than the pre-motion model, with Wald 95\% confidence intervals for the share.}
+\caption{The ten offenses with the largest share of motion plays in which the model including motion assigned a higher probability to the correct defensive scheme than the pre-motion model, with Wilson 95\% confidence intervals for the share.}
 \label{tab:teams}
 \begin{tabular}{llrr}
 \hline
  & Team & Motion plays & Share [95\% CI] \\
 \hline
-1 & New Orleans Saints & 56 & 0.73 [0.61, 0.85] \\
+1 & New Orleans Saints & 56 & 0.73 [0.60, 0.83] \\
 2 & Kansas City Chiefs & 170 & 0.72 [0.65, 0.79] \\
 3 & San Francisco 49ers & 196 & 0.71 [0.65, 0.77] \\
-4 & Indianapolis Colts & 124 & 0.71 [0.63, 0.79] \\
+4 & Indianapolis Colts & 124 & 0.71 [0.62, 0.78] \\
 5 & Minnesota Vikings & 176 & 0.70 [0.63, 0.77] \\
-6 & Atlanta Falcons & 240 & 0.69 [0.63, 0.75] \\
-7 & Tennessee Titans & 60 & 0.68 [0.56, 0.80] \\
-8 & Tampa Bay Buccaneers & 128 & 0.68 [0.60, 0.76] \\
-9 & Cincinnati Bengals & 68 & 0.68 [0.57, 0.79] \\
-10 & Miami Dolphins & 244 & 0.68 [0.62, 0.74] \\
+6 & Atlanta Falcons & 240 & 0.69 [0.63, 0.74] \\
+7 & Tennessee Titans & 60 & 0.68 [0.56, 0.79] \\
+8 & Tampa Bay Buccaneers & 128 & 0.68 [0.59, 0.75] \\
+9 & Cincinnati Bengals & 68 & 0.68 [0.56, 0.78] \\
+10 & Miami Dolphins & 244 & 0.68 [0.62, 0.73] \\
 \hline
 \end{tabular}
 \end{table}
-\todo[inline]{Recompute shares and CIs from results/team\_tab.rds (values here from rounded shares).}
 
 \section{Discussion}\label{sec:discussion}
 
 We proposed a hidden Markov model for the latent guarding assignments of defenders during pre-snap motion in American football and used it both to describe defensive behaviour and to predict the defensive coverage scheme. The model yields interpretable quantities with measures of uncertainty: defenders react to the motion with a delay of about 0.4 seconds, guarding assignments are highly persistent and switches occur mostly between nearby offensive players, cornerbacks keep their assignments while linebackers pass them off, and the switching behaviour varies far more between plays than between teams. Features derived as posterior expectations of the latent assignments carry the uncertainty of the inferred assignments into the subsequent analysis.
 
-For the prediction of the coverage scheme, pre-snap motion is clearly informative. The HMM features are significantly associated with the coverage scheme beyond simple motion summaries, with the expected direction, but their additional predictive value is small, as most of the information is already contained in the naive motion features. We regard this as an honest and practically relevant result: for forecasting man versus zone, simple summaries of the motion go a long way, whereas the latent-state model is needed to understand how defenders react to motion, for example to compare positions, teams and plays.
+For the prediction of the coverage scheme, pre-snap motion is clearly informative. The HMM features carry information about the coverage scheme beyond simple motion summaries, with the expected direction, but this information translates into only a small, model-dependent improvement in predictive performance, as most of it is already contained in the naive motion features. We regard this as an honest and practically relevant result: for forecasting man versus zone, simple summaries of the motion go a long way, whereas the latent-state model is needed to understand how defenders react to motion, for example to compare positions, teams and plays.
 
 Several limitations should be noted. First, the classification into man and zone coverage is a coarse abstraction of real defensive strategies; each category encompasses multiple subtypes, such as Cover-1, Cover-2, Cover-3, or hybrid schemes. HMMs could be used to model not only the guarding responsibilities but also switches between man coverage and specific areas of the field (see \citealp{groom} for a similar approach in soccer), potentially within a hierarchical HMM structure. Second, apart from the play-specific random effect, the defenders are modeled as conditionally independent. Recent advances in modelling multivariate state-dependent distributions non-parametrically (\citealp{koslik2025tensor, michels2025nonparametric}) could capture the coordination between defenders more directly. Third, the inferred assignments cannot be validated against ground truth, as the actual responsibilities of the defenders are not recorded; their plausibility rests on the fit of the model and on examples such as the one in Figure~\ref{fig:snap}. Fourth, the model is computationally demanding, mainly due to the play-level random effects in the Laplace approximation. Finally, the dataset is limited to nine weeks of one season; with more data, models such as neural networks could use the full posterior sequences of the assignments rather than summary statistics (\citealp{Song2023, dempster2020rocket}).
 
@@ -520,31 +521,31 @@ The initial distribution of each defender is the softmax of the negative lateral
 
 \begin{table}[ht]
 \centering
-\caption{Profile likelihood of the sharpness $\alpha$ of the initial distribution (homogeneous HMM, 1,000 plays): difference in the negative log likelihood to the best value.}
+\caption{Profile likelihood of the sharpness $\alpha$ of the initial distribution (homogeneous HMM, lag 4, 1,000 plays): difference in the negative log likelihood to the best value, and correlation of the play-level HMM features with those for $\alpha = 1$.}
 \label{tab:alpha}
-\begin{tabular}{rr}
+\begin{tabular}{rrccc}
 \hline
-$\alpha$ & $\Delta$ nll \\
+$\alpha$ & $\Delta$ nll & \multicolumn{3}{c}{Correlation with features for $\alpha = 1$} \\
+ & & Exp.\ switches & Exp.\ \# switching defenders & Mean entropy \\
 \hline
-0.25 & 2287.4 \\
-0.5 & 1071.0 \\
-1 & 356.3 \\
-2 & 50.3 \\
-4 & 0 \\
-8 & 50.2 \\
-16 & 112.8 \\
+0.25 & 2279.0 & 0.999 & 0.998 & 0.998 \\
+0.5 & 1064.3 & 0.999 & 0.999 & 0.999 \\
+1 & 351.4 & 1 & 1 & 1 \\
+2 & 47.7 & 0.998 & 0.998 & 0.999 \\
+4 & 0 & 0.990 & 0.988 & 0.993 \\
+8 & 50.0 & 0.978 & 0.971 & 0.984 \\
+16 & 109.9 & 0.971 & 0.961 & 0.976 \\
 \hline
 \end{tabular}
 \end{table}
-\todo[inline]{Check that Table~\ref{tab:alpha} was computed at lag 4; otherwise rerun 02a at lag 4 (\texttt{options(hmmotion.lag\_n = 1000)}) for the final numbers.}
 
 \section{Lags}
 
-To select the lag $l$, we fitted the homogeneous HMM with lags $l = 0, \ldots, 6$ on the same observations of a random subset of 1,000 plays and compared the models by AIC (Table~\ref{tab:lags}). Lags of four and five frames are clearly preferred over shorter and longer lags; their difference is small, and in a second subset of 500 plays the order of the two was reversed ($\Delta$AIC of 30 in favour of $l=4$). We use $l = 4$, as in our earlier analysis.
+To select the lag $l$, we fitted the homogeneous HMM with lags $l = 0, \ldots, 6$ on the same observations of a random subset of 1,000 plays and compared the models by AIC (Table~\ref{tab:lags}). Lags of four and five frames are clearly preferred over shorter and longer lags; their difference is small, and in a second subset of 500 plays the order of the two was reversed ($\Delta$AIC of 30 in favour of $l=4$). We use $l = 4$, as in our earlier analysis. The difference of 93 in AIC corresponds to a log-likelihood difference of about 46, which is very small relative to the 265,990 observations (about $1.7 \times 10^{-4}$ per observation), and reaction times of 0.4 and 0.5 seconds are substantively equivalent, so that the choice between the two lags does not affect the interpretation of the model.
 
 \begin{table}[ht]
 \centering
-\caption{AIC of the homogeneous HMM for different lags (1,000 plays), relative to the best model.}
+\caption{AIC of the homogeneous HMM for different lags (1,000 plays, 265,990 observations), relative to the best model.}
 \label{tab:lags}
 \begin{tabular}{lrrrrrrr}
 \hline
@@ -661,10 +662,9 @@ Figure~\ref{fig:re_def} presents the predicted random effects for all defensive 
 \begin{figure}[h!]
     \centering
     \includegraphics[width= \linewidth]{figures/plots/re_def.pdf}
-    \caption{Predicted random effect for each defense. Smaller values correspond to a higher probability of continuing to guard the same offensive player, and vice versa.}
+    \caption{Predicted random effect for each defense with 95\% prediction intervals. Smaller values correspond to a higher probability of continuing to guard the same offensive player, and vice versa.}
     \label{fig:re_def}
 \end{figure}
-\todo[inline]{Recreate Figure~\ref{fig:re_def} from the new model; the old figure has mislabelled teams.}
 
 \end{spacing}
 \end{document}
