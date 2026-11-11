@@ -13,6 +13,7 @@
 ####     re_def.pdf                                       (team random effects)
 ####     snapshot.pdf                                     (example play)
 ####     paired_diffs.pdf                                 (paired logloss differences)
+####     all_losses_cross_fitting.pdf                     (boxplots of the loss metrics, as in AoAS)
 ####
 #### Sections (each can be switched off below)
 ####   1  data: number of plays, man / zone
@@ -315,6 +316,29 @@ p_paired <- paired |>
   labs(x = NULL, y = "Paired difference in logloss") +
   theme_bw(base_size = 12)
 save_fig(p_paired, "paired_diffs.pdf", width = 8, height = 3.8)
+
+# figure as in the AoAS version: boxplots of accuracy, AUC and negative logloss
+# over the repetitions, per model class and feature set
+n_rep <- length(cf)
+loss_panel <- function(m, title, ylab, sign = 1){
+  cf_long |>
+    filter(metric == m) |>
+    mutate(value = sign * value,
+           fs = factor(fs, levels = c("pre", "naive", "HMM"))) |>
+    ggplot(aes(x = fs, y = value, fill = fs)) +
+    geom_boxplot() +
+    facet_wrap(~mod) +
+    scale_fill_manual(values = c(pre = "gray50", naive = "yellowgreen", HMM = "#38761d"),
+                      name = "Model") +
+    labs(title = paste0(title, " (", n_rep, " different seeds)"), x = "Model", y = ylab) +
+    theme_bw(base_size = 11)
+}
+p_losses <- ggpubr::ggarrange(
+  loss_panel("accuracy", "Accuracies", "Accuracy"),
+  loss_panel("AUC", "AUCs", "AUC"),
+  loss_panel("logloss", "Negative loglosses", "Negative logloss (log-likelihood)", sign = -1),
+  ncol = 3, common.legend = TRUE)
+save_fig(p_losses, "all_losses_cross_fitting.pdf", width = 12, height = 5)
 
 lowo <- readRDS(file.path(res_dir, "zvm_lowo_runs.rds"))
 cat("\nLeave-one-week-out (rows = test weeks in order):\n")
