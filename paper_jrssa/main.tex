@@ -521,23 +521,23 @@ The initial distribution of each defender is the softmax of the negative lateral
 
 \begin{table}[ht]
 \centering
-\caption{Profile likelihood of the sharpness $\alpha$ of the initial distribution (homogeneous HMM, 1,000 plays): difference in the negative log likelihood to the best value.}
+\caption{Profile likelihood of the sharpness $\alpha$ of the initial distribution (homogeneous HMM, lag 4, 1,000 plays): difference in the negative log likelihood to the best value, and correlation of the play-level HMM features with those for $\alpha = 1$.}
 \label{tab:alpha}
-\begin{tabular}{rr}
+\begin{tabular}{rrccc}
 \hline
-$\alpha$ & $\Delta$ nll \\
+$\alpha$ & $\Delta$ nll & \multicolumn{3}{c}{Correlation with features for $\alpha = 1$} \\
+ & & Exp.\ switches & Exp.\ \# switching defenders & Mean entropy \\
 \hline
-0.25 & 2287.4 \\
-0.5 & 1071.0 \\
-1 & 356.3 \\
-2 & 50.3 \\
-4 & 0 \\
-8 & 50.2 \\
-16 & 112.8 \\
+0.25 & 2279.0 & 0.999 & 0.998 & 0.998 \\
+0.5 & 1064.3 & 0.999 & 0.999 & 0.999 \\
+1 & 351.4 & 1 & 1 & 1 \\
+2 & 47.7 & 0.998 & 0.998 & 0.999 \\
+4 & 0 & 0.990 & 0.988 & 0.993 \\
+8 & 50.0 & 0.978 & 0.971 & 0.984 \\
+16 & 109.9 & 0.971 & 0.961 & 0.976 \\
 \hline
 \end{tabular}
 \end{table}
-\todo[inline]{Table~\ref{tab:alpha} was computed at lag 5 (its nll at $\alpha=1$ equals the lag-5 fit in Table~\ref{tab:lags}); rerun 02a (lag 4 in settings.R) and update.}
 
 \section{Lags}
 
