@@ -29,7 +29,15 @@ source(here("jrssa", "zvm_models.R"))
 TEST <- isTRUE(getOption("hmmotion.test", FALSE)) || Sys.getenv("HMMOTION_TEST") == "1"
 res_dir <- if(TEST) here("results", "test") else here("results")
 dir.create(res_dir, recursive = TRUE, showWarnings = FALSE)
-test_grid <- if(TEST) expand_grid(eta = 0.3, max_depth = c(1, 3)) else NULL
+# XGBoost grid of the cross-fitting in the AoAS version (cross_fitting_zvm_cluster.R):
+# eta x depth x colsample_bytree x gamma = 120 combinations, all tuned
+aoas_grid <- expand_grid(eta = c(0.01, 0.05, 0.1, 0.5, 1),
+                         max_depth = c(1, 3, 5, 10),
+                         colsample_bytree = c(0.8, 1),
+                         gamma = c(1, 3, 5))
+test_grid <- if(TEST) expand_grid(eta = 0.3, max_depth = c(1, 3),
+                                  colsample_bytree = 1, gamma = 1) else NULL
+cf_grid <- if(TEST) test_grid else aoas_grid
 
 if(TEST){
   set.seed(1)
@@ -632,10 +640,35 @@ run_models_crossfit <- function(seedu, model_data_full, K = 5, param_grid = NULL
 
 library(parallel)
 
-# Each repetition yields out-of-sample predictions for all plays, so 10
-# repetitions of 5-fold cross-fitting (50 fits per model) suffice
-nsim <- if(TEST) 2 else 10
+# 50 repetitions of 5-fold cross-fitting with the AoAS grid, as in the AoAS
+# version (cross_fitting_zvm_cluster.R)
+nsim <- if(TEST) 2 else 50
 seeds <- round(seq(1, 1000, length.out = nsim))
+rep_dir <- file.path(res_dir, "crossfit_reps")
+dir.create(rep_dir, showWarnings = FALSE)
+rep_file <- function(i) file.path(rep_dir, sprintf("rep_%02d.rds", i))
+
+# SLURM array job (run_lido_crossfit_array.sh): one repetition per array task,
+# saved to results/crossfit_reps/rep_XX.rds; nothing else is run
+task <- Sys.getenv("SLURM_ARRAY_TASK_ID")
+if(nzchar(task)){
+  i <- as.integer(task)
+  cat("Array task", i, "| seed", seeds[i], "\n")
+  res_i <- run_models_crossfit(seeds[i], model_data_full, param_grid = cf_grid)
+  saveRDS(res_i, rep_file(i))
+  cat("Repetition", i, "saved\n")
+  quit(save = "no")
+}
+
+# Combine the repetitions of the array job: HMMOTION_COMBINE=1
+if(Sys.getenv("HMMOTION_COMBINE") == "1"){
+  have <- file.exists(rep_file(seq_len(nsim)))
+  if(!all(have)) stop("missing repetitions: ", paste(which(!have), collapse = ", "))
+  saveRDS(lapply(seq_len(nsim), \(i) readRDS(rep_file(i))),
+          file.path(res_dir, "zvm_crossfit_runs.rds"))
+  cat("Combined", nsim, "repetitions into zvm_crossfit_runs.rds\n")
+  quit(save = "no")
+}
 
 # Cluster mit Anzahl der Kerne erstellen
 # use the cores SLURM allocated (detectCores() returns all cores of the node)
@@ -644,7 +677,7 @@ if(TEST) n_cores <- min(n_cores, 2)
 cl <- makeCluster(n_cores)
 
 # Optional: benötigte Funktionen/Objekte exportieren
-clusterExport(cl, c("run_models_crossfit", "zvm_models", "seeds", "model_data_full", "test_grid"))
+clusterExport(cl, c("run_models_crossfit", "zvm_models", "seeds", "model_data_full", "cf_grid"))
 
 results_list <- parLapply(
   cl,
@@ -652,7 +685,7 @@ results_list <- parLapply(
   function(seedu) {
     cat("\n\nIteration ", which(seeds == seedu))
     cat("\nSeed: ", seedu, "\n\n")
-    run_models_crossfit(seedu, model_data_full, param_grid = test_grid)
+    run_models_crossfit(seedu, model_data_full, param_grid = cf_grid)
   }
 )
 
@@ -665,7 +698,9 @@ saveRDS(results_list, file.path(res_dir, "zvm_crossfit_runs.rds"))
 
 
 # LOWO CV -----------------------------------------------------------------
+# Not part of the paper; only run with HMMOTION_LOWO=1.
 # Uses the real week of each play (play_week), not row blocks
+if(Sys.getenv("HMMOTION_LOWO") == "1"){
 weeks <- sort(unique(play_week))
 if(TEST) weeks <- weeks[1:2]
 
@@ -699,6 +734,7 @@ results_list <- parLapply(
 stopCluster(cl)
 
 saveRDS(results_list, file.path(res_dir, "zvm_lowo_runs.rds"))
+}
 
 
 # Results ---------------------------------------------------------------

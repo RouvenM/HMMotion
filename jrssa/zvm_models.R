@@ -77,16 +77,24 @@ zvm_models <- function(model_data,
       }
       xgb_list <- list()
       set.seed(seed)
+      # Two kinds of grids: with columns colsample_bytree and gamma (grid of
+      # the AoAS cross-fitting, cross_fitting_zvm_cluster.R), these are tuned;
+      # otherwise colsample_bynode = 0.3 and gamma = 0.5 are fixed.
+      tune_cg <- all(c("colsample_bytree", "gamma") %in% names(param_grid))
+      extra_par <- function(i){
+        if(tune_cg) list(colsample_bytree = param_grid$colsample_bytree[i],
+                         gamma = param_grid$gamma[i])
+        else list(colsample_bynode = 0.3, gamma = 0.5)
+      }
       for(i in 1:nrow(param_grid)){
-        params <- list(eval_metric = c("logloss"),
-                       objective = "binary:logistic",
-                       eta = param_grid$eta[i],
-                       max_depth = param_grid$max_depth[i],
-                       # same gamma as the final model below, so that the
-                       # number of rounds is tuned for the model that is fitted
-                       gamma = 0.5,
-                       colsample_bynode = 0.3,
-                       nthread = nthread)
+        # gamma and column sampling as in the final model below, so that the
+        # number of rounds is tuned for the model that is fitted
+        params <- c(list(eval_metric = c("logloss"),
+                         objective = "binary:logistic",
+                         eta = param_grid$eta[i],
+                         max_depth = param_grid$max_depth[i],
+                         nthread = nthread),
+                    extra_par(i))
         xgb_list[[i]] <- xgb.cv(params = params,data = xgb_mat,
                                 nfold = 5,showsd = T, nrounds = 1500,
                                 print_every_n = 100,early_stopping_rounds = 15,...)
@@ -101,11 +109,11 @@ zvm_models <- function(model_data,
       bpi <- which.min(cv_losses)
       nr <- best_iter(xgb_list[[bpi]])
       # xgb.train has the same interface in old and new xgboost versions
-      modu <- xgb.train(params = list(objective = "binary:logistic",
-                                      max_depth = param_grid$max_depth[bpi],
-                                      eta = param_grid$eta[bpi],
-                                      gamma = 0.5, colsample_bynode = 0.3,
-                                      nthread = nthread),
+      modu <- xgb.train(params = c(list(objective = "binary:logistic",
+                                        max_depth = param_grid$max_depth[bpi],
+                                        eta = param_grid$eta[bpi],
+                                        nthread = nthread),
+                                   extra_par(bpi)),
                         data = xgb_mat, nrounds = nr, ...)
     }else{
       modu <- xgb.train(params = list(objective = "binary:logistic",

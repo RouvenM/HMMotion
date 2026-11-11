@@ -61,9 +61,14 @@ Run the scripts in this order:
    (average_ent). Also writes results/hmm_features_tracks.rds (per defender)
    and results/hmm_features_argmax.rds (AoAS argmax version, robustness check).
 
-4. 04_zvm_cv_runs.R  (run on LiDO, see run_lido_parallel.sh)
-   Coverage models (elastic net, XGBoost): 10 repetitions of 5-fold cross-fitting
-   -> results/zvm_crossfit_runs.rds; leave-one-week-out CV -> results/zvm_lowo_runs.rds.
+4. 04_zvm_cv_runs.R  (run on LiDO, see run_lido_crossfit_array.sh)
+   Coverage models (elastic net, XGBoost): 50 repetitions of 5-fold cross-fitting
+   with the XGBoost grid of the AoAS version (eta x depth x colsample_bytree x
+   gamma = 120 combinations, cross_fitting_zvm_cluster.R) -> results/zvm_crossfit_runs.rds.
+   On LiDO as an array job (one repetition per task, results/crossfit_reps/),
+   combined afterwards with HMMOTION_COMBINE=1 (see the job script).
+   Leave-one-week-out CV (not in the paper) only with HMMOTION_LOWO=1
+   -> results/zvm_lowo_runs.rds.
    Quick test without the HMM: options(hmmotion.test = TRUE) uses 500 random plays
    with noise as HMM features, 2 repetitions, a small grid and 2 test weeks
    (results/test/).
@@ -125,7 +130,7 @@ Changes relative to the versions used for the AoAS submission
 - 04: train/test splits are seeded; 5-fold cross-fitting as described in the
   paper; leave-one-week-out uses the real week and the right function; the
   full run_models() reported glmnet instead of XGBoost for "af_ex_hmm".
-- 04 / zvm_models.R, run time: 10 instead of 50 repetitions, XGBoost grid
+- (superseded, see below) 04 / zvm_models.R, run time: 10 instead of 50 repetitions, XGBoost grid
   eta {0.05, 0.1, 0.3} x depth {1, 3, 5} instead of 6 x 4 values, one thread per
   XGBoost fit and as many workers as SLURM allocated (detectCores() returned
   all cores of the node, oversubscribing it).
@@ -148,3 +153,9 @@ Changes relative to the versions used for the AoAS submission
   state probabilities with LaMa's stateprobs_g().
 - 06: the paper described the marginal tests (right panel) with the partial
   hypothesis Y _||_ X_j | (Z, X_-j); the code conditions on Z only there.
+- 04: back to the AoAS cross-fitting design (cross_fitting_zvm_cluster.R):
+  50 repetitions and the grid eta {0.01, 0.05, 0.1, 0.5, 1} x depth {1, 3, 5, 10}
+  x colsample_bytree {0.8, 1} x gamma {1, 3, 5}, with gamma and column sampling
+  tuned and used in the final model. The fixes above (four HMM features, no week
+  columns, seeded folds) are kept. 05 still uses the default grid of
+  zvm_models.R (eta x depth, colsample_bynode = 0.3, gamma = 0.5).
