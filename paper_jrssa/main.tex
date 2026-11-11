@@ -440,14 +440,14 @@ XGBoost & Accuracy & 0.0153 [0.0103, 0.0203] & 0.0003 [$-$0.0029, 0.0039] \\
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{figures/plots/gcm_test_all_plus_omnibus.pdf}
-    \caption{$p$-values on a $-\log_{10}$-scale of the partial GCM tests of the HMM features and the coverage scheme given the pre- and naive post-motion features and, for the individual tests, the other HMM features. The solid horizontal line indicates the 5\%-level. The dashed vertical line separates the omnibus test of all HMM features from the tests of the individual features.}
+    \caption{$p$-values on a $-\log_{10}$-scale of the partial GCM tests of the HMM features and the coverage scheme given the pre- and naive post-motion features and, for the individual tests, the other HMM features. The dashed horizontal line indicates the 5\%-level. The dotted vertical line separates the omnibus test of all HMM features from the tests of the individual features.}
     \label{fig:sig1}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.5\linewidth]{figures//plots/gcm_teststat.pdf}
-    \caption{Unnormalized statistics of the marginal GCM tests of each HMM feature given the pre- and naive post-motion features, with 95\% confidence intervals. The vertical dashed line corresponds to zero.}
+    \includegraphics[width=0.5\linewidth]{figures/plots/gcm_teststat.pdf}
+    \caption{Normalised statistics of the marginal GCM tests of each HMM feature given the pre- and naive post-motion features. Dashed lines: two-sided critical values at the 5\%-level; dotted lines: Bonferroni-corrected critical values for four tests. Negative values indicate a lower probability of man coverage for larger values of the feature.}
     \label{fig:sig2}
 \end{figure}
 
@@ -459,7 +459,7 @@ The GCM tests show that the HMM features nevertheless carry information about th
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figures/plots/team_diffs.pdf}
-    \caption{Differences in the predicted probability of the correct defensive scheme between the model with motion and HMM features and the model with pre-motion features only, for each play of each offense. Teams are ordered by the medians of the boxplots.}
+    \caption{Differences in the predicted probability of the correct defensive scheme between the model with motion and HMM features and the model with pre-motion features only, for each play of each offense (leave-one-team-out predictions). Positive values indicate that the model including motion assigns a higher probability to the correct scheme. Teams are ordered by the medians of the boxplots.}
     \label{fig:teamdiff}
 \end{figure}
 

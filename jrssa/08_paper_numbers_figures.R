@@ -9,7 +9,7 @@
 ####   results/paper/*.pdf               figures, also copied to
 ####   paper_jrssa/figures/plots/        under the names used in main.tex:
 ####     gcm_test_all_plus_omnibus.pdf, gcm_teststat.pdf  (GCM, from 06)
-####     team_diffs.pdf                                   (from 05)
+####     team_diffs.pdf                                   (team differences, from 05's teams_zvm.rds)
 ####     re_def.pdf                                       (team random effects)
 ####     snapshot.pdf                                     (example play)
 ####     paired_diffs.pdf                                 (paired logloss differences)
@@ -365,10 +365,31 @@ for(i in seq_len(nrow(top))) cat(sprintf("%d & %s & %d & %d & %.2f [%.2f, %.2f] 
                                          top$team[i], top$n[i], top$n_improv[i], top$share[i],
                                          top$lo[i], top$hi[i]))
 cat("overall share of improved plays:", round(sum(team_tab$n_improv) / sum(team_tab$n), 3), "\n")
-if(file.exists(file.path(res_dir, "team_diffs.pdf"))){
-  file.copy(file.path(res_dir, "team_diffs.pdf"), file.path(fig_dir, "team_diffs.pdf"), overwrite = TRUE)
-  cat("team_diffs.pdf copied from results (created by 05)\n")
-} else cat("results/team_diffs.pdf not found: run the figure part of 05\n")
+# figure: difference in the predicted probability of the correct scheme
+# (post-motion model incl. HMM features minus pre-motion model) per play, from 05
+all_team_zvm <- readRDS(file.path(res_dir, "teams_zvm.rds"))
+diff_tab <- bind_rows(lapply(names(all_team_zvm), \(team){
+  x <- all_team_zvm[[team]]
+  data.frame(team = team,
+             diff = c(x$zone_table$post_zone_prob - x$zone_table$pre_zone_prob,
+                      x$man_table$post_man_prob - x$man_table$pre_man_prob))
+})) |>
+  mutate(team = reorder(team, diff, FUN = median))
+use_nfl <- requireNamespace("nflplotR", quietly = TRUE)
+p_team <- ggplot(diff_tab, aes(x = team, y = diff)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "darkred") +
+  (if(use_nfl) geom_boxplot(aes(fill = team, colour = team), outlier.size = 0.6, outlier.alpha = 0.4)
+   else geom_boxplot(outlier.size = 0.6, outlier.alpha = 0.4, fill = "gray85", colour = "gray30")) +
+  labs(x = NULL, y = "Difference in predicted probability\nof the correct scheme") +
+  theme_bw(base_size = 11) +
+  theme(panel.grid.major.x = element_blank(), legend.position = "none")
+p_team <- if(use_nfl){
+  p_team +
+    nflplotR::scale_fill_nfl(alpha = 0.7) +
+    nflplotR::scale_color_nfl(type = "secondary") +
+    theme(axis.text.x = nflplotR::element_nfl_logo(size = 0.75))
+} else p_team + theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+save_fig(p_team, "team_diffs.pdf", width = 10, height = 4.5)
 
 # 8 Lag and alpha ----------------------------------------------------------------
 section("8 Lag and alpha (02a)")
