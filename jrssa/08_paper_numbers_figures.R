@@ -67,9 +67,10 @@ section("2 HMM parameters")
 mod <- readRDS(file.path(res_dir, "mod_final_full.rds"))
 sdr <- mod$sdr
 
-fixed <- as.data.frame(summary(sdr, "fixed"))
-names(fixed) <- c("est", "se")
-fixed$par <- rownames(fixed)
+# estimates and SEs taken directly from the sdreport object (as summary.sdreport
+# does), so the TMB summary method need not be loaded
+fixed <- data.frame(est = sdr$par.fixed, se = sqrt(diag(sdr$cov.fixed)))
+fixed$par <- make.unique(names(sdr$par.fixed))
 print(fixed, digits = 4)
 
 # standard deviations: estimate, delta-method SE and CI on the log scale
@@ -86,10 +87,9 @@ print(fixed_tab, digits = 4, row.names = FALSE)
 cat("odds ratio per yard, exp(beta_dist):",
     round(exp(fixed$est[fixed$par == "beta_dist"]), 3), "\n")
 
-# random effects with prediction SEs (summary(sdr, "random") is in parameter order)
-rand <- as.data.frame(summary(sdr, "random"))
-names(rand) <- c("est", "se")
-rand$block <- sub("\\..*$", "", rownames(rand))
+# random effects with prediction SEs (in parameter order)
+rand <- data.frame(est = sdr$par.random, se = sqrt(sdr$diag.cov.random),
+                   block = names(sdr$par.random))
 re_block <- function(b){
   r <- rand[rand$block == b, ]
   stopifnot(nrow(r) == length(mod[[b]]), max(abs(r$est - mod[[b]])) < 1e-4)
