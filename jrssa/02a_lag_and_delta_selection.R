@@ -158,6 +158,6 @@ alpha_tab <- do.call(rbind, lapply(seq_along(alphas), \(i){
 alpha_tab$dnll <- alpha_tab$nll - min(alpha_tab$nll)
 print(alpha_tab)
 
-saveRDS(list(lag_tab = lag_tab, lag_sel = lag_sel, alpha_tab = alpha_tab,
+saveRDS(list(lag_tab = lag_tab, lag_sel = lag_sel, alpha_tab = alpha_tab, lag_alpha = HMM_LAG,
              plays = plays, n_obs = length(y)),
         file.path(res_dir, "lag_delta_selection.rds"))

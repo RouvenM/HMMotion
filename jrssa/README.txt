@@ -81,6 +81,16 @@ Run the scripts in this order:
      -> results/gcm_marginal.rds
    fig_gcm.R draws both panels of the GCM figure from these files.
 
+8. 08_paper_numbers_figures.R  (local, a few minutes; after 02-06)
+   All numbers, tables and figures for paper_jrssa/main.tex from the saved
+   results: man/zone counts, fixed effects with SE/CI, role and team random
+   effects (figure re_def.pdf), feature summary, t.p.m. of the example play
+   (Marco Wilson) and snapshot.pdf, cross-fitting mean/sd and paired
+   differences, LOWO, GCM figures, team table with Wilson CIs, lag/alpha
+   tables. Writes results/paper/paper_numbers.txt and copies the figures to
+   paper_jrssa/figures/plots/. Uses rawdata/tracking_week_1.csv (if present)
+   to name the offensive players of the example play. run_07 = TRUE also runs 07.
+
 zvm_models.R is the shared model-fitting function sourced by 04 and 05.
 fig_HMM_expl.R draws the HMM illustration (figure HMM_expl).
 
