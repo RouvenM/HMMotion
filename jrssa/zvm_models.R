@@ -82,6 +82,9 @@ zvm_models <- function(model_data,
                        objective = "binary:logistic",
                        eta = param_grid$eta[i],
                        max_depth = param_grid$max_depth[i],
+                       # same gamma as the final model below, so that the
+                       # number of rounds is tuned for the model that is fitted
+                       gamma = 0.5,
                        colsample_bynode = 0.3,
                        nthread = nthread)
         xgb_list[[i]] <- xgb.cv(params = params,data = xgb_mat,

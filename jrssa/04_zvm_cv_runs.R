@@ -476,7 +476,7 @@ run_models_small_lowo <- function(seedu, model_data_full_train, model_data_full_
   xgb_xy <- zvm_models(model_data,test_data,
                        ml_type = "xgboost",
                        param_grid = param_grid,
-                       excl_vars = c(
+                       excl_vars = c("average",  # = sum / 5, not one of the four HMM features
                          names(model_data)[grep("dist_fb",names(model_data))],
                          names(model_data)[grep("def_o_qb_diff",names(model_data))]),
                        seed = seedu,
@@ -572,7 +572,9 @@ run_models_crossfit <- function(seedu, model_data_full, K = 5, param_grid = NULL
                  names(model_data_full)[grep("def_o_qb_diff",names(model_data_full))])
   hmm_vars <- c("beta","average","sum","nr_player_changes","average_ent")
   naive_vars <- c("max_x_o","max_y_o","tot_dist_o","max_x_d","max_y_d","tot_dist_d")
-  feature_sets <- list(xy_f = excl_base,                                  # HMM post
+  # "average" (= sum / 5) is left out of the HMM set: the four HMM features are
+  # those of the paper and of the GCM tests
+  feature_sets <- list(xy_f = c(excl_base, "average"),                   # HMM post
                        xy_f_ex_hmm = c(excl_base, hmm_vars),              # naive post
                        xy_npo_ex_hmm = c(excl_base, hmm_vars, naive_vars)) # pre
   

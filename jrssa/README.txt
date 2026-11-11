@@ -134,6 +134,14 @@ Changes relative to the versions used for the AoAS submission
 - 05: reads the final data and excludes the play random effect ("beta") from
   the pre-motion model.
 - zvm_models.R: random-forest branch referenced an undefined object.
+- zvm_models.R: xgb.cv now uses gamma = 0.5 like the final xgb.train fit.
+  Before, eta, depth and the number of rounds were tuned without gamma
+  (default 0) and the final model was fitted with gamma = 0.5 (as in the AoAS
+  code), so the number of rounds was tuned for a different model.
+- 04, 05: the HMM model uses the four HMM features of the paper and of the
+  GCM tests (sum, nr_player_changes, average_ent, beta). Before, it also
+  contained "average" (= sum / 5, an exact copy up to scaling), which with
+  colsample_bynode = 0.3 crowds out other features in XGBoost.
 - 03: HMM features are now posterior expectations from a forward-backward pass
   instead of counts of the argmax state sequence, so they carry the
   uncertainty of the decoded assignments. A self-check compares the local

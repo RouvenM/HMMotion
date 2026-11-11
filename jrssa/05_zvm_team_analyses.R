@@ -79,7 +79,7 @@ for(team in teams){
   
   Team_xy_po <- zvm_models(NTeam_plays,Team_plays,
                            ml_type = "xgboost",
-                           excl_vars = c(
+                           excl_vars = c("average",  # = sum / 5, not one of the four HMM features
                              names(model_data_full)[grep("dist_fb",names(model_data_full))],
                              names(model_data_full)[grep("def_o_qb_diff",names(model_data_full))]),
                            seed = seedu,
