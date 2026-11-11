@@ -49,6 +49,7 @@ save_fig <- function(plot, name, width, height){
 }
 
 num_file <- file.path(out_dir, "paper_numbers.txt")
+while(sink.number() > 0) sink()  # close sinks left open by an aborted earlier run
 sink(num_file, split = TRUE)
 cat("Numbers for paper_jrssa/main.tex, created", format(Sys.time()), "\n")
 section <- function(s) cat("\n\n==================== ", s, " ====================\n", sep = "")
