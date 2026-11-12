@@ -82,8 +82,12 @@
 \DeclareMathOperator*{\argmax}{arg\,max}
 
 \makeatother
-% alternative text for figures, as required by the journal
-\newcommand{\alttext}[1]{\par\smallskip{\footnotesize\noindent Alt text: #1}}
+% Alternative text for figures, as required by the journal (shown under each
+% caption in the submitted manuscript, not in the typeset article).
+% Switch: \showalttexttrue for the submission, \showalttextfalse to hide them.
+\newif\ifshowalttext
+\showalttextfalse
+\newcommand{\alttext}[1]{\ifshowalttext\par\smallskip{\footnotesize\noindent Alt text: #1}\fi}
 \begin{document}
 \begin{spacing}{1.35}
 
