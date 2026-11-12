@@ -468,7 +468,7 @@ We transformed the state probabilities into the metrics described in Section~\re
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figures/plots/all_losses_cross_fitting.pdf}
-    \caption{Boxplots of the different loss metrics (left subpanel: accuracies; middle: AUC; right: negative logloss) obtained from 50 different runs of the cross fitting procedure. Each panel contains the results from the elastic net (\texttt{glmnet}) on the left and the XGBoost model, on the right.}
+    \caption{Top: Boxplots of the different loss metrics (left subpanel: accuracies; middle: AUC; right: negative logloss) obtained from 50 different runs of the cross fitting procedure. Each panel contains the results from the elastic net (\texttt{glmnet}) on the left and the XGBoost model, on the right. Bottom: Paired differences between the models with HMM features and with naive post-motion features for each run (points), on separate scales; positive values indicate an improvement by the HMM features.}
     \label{fig:loss_metrics}
 \end{figure}
 

@@ -338,7 +338,29 @@ p_losses <- ggpubr::ggarrange(
   loss_panel("AUC", "AUCs", "AUC"),
   loss_panel("logloss", "Negative loglosses", "Negative logloss (log-likelihood)", sign = -1),
   ncol = 3, common.legend = TRUE)
-save_fig(p_losses, "all_losses_cross_fitting.pdf", width = 12, height = 5)
+# second row: paired differences HMM - naive per run, on their own scale
+# (for the logloss the difference of the negative logloss, so that positive
+# values indicate an improvement in all three panels)
+diff_panel <- function(m, title, ylab, sign = 1){
+  cf_long |>
+    filter(metric == m, fs %in% c("naive", "HMM")) |>
+    pivot_wider(names_from = fs, values_from = value) |>
+    mutate(diff = sign * (HMM - naive)) |>
+    ggplot(aes(x = mod, y = diff)) +
+    geom_hline(yintercept = 0, linetype = "dashed", colour = "darkred") +
+    geom_boxplot(width = 0.5, outlier.shape = NA, fill = "#38761d", alpha = 0.3) +
+    geom_point(position = position_jitter(width = 0.1, height = 0, seed = 1),
+               size = 1, alpha = 0.6) +
+    labs(title = title, x = "Model", y = ylab) +
+    theme_bw(base_size = 11)
+}
+p_diffs <- ggpubr::ggarrange(
+  diff_panel("accuracy", "Accuracy: HMM - naive", "Difference in accuracy"),
+  diff_panel("AUC", "AUC: HMM - naive", "Difference in AUC"),
+  diff_panel("logloss", "Negative logloss: HMM - naive", "Difference in negative logloss", sign = -1),
+  ncol = 3)
+p_losses <- ggpubr::ggarrange(p_losses, p_diffs, nrow = 2, heights = c(1.15, 1))
+save_fig(p_losses, "all_losses_cross_fitting.pdf", width = 12, height = 9)
 
 lowo <- readRDS(file.path(res_dir, "zvm_lowo_runs.rds"))
 cat("\nLeave-one-week-out (rows = test weeks in order):\n")
