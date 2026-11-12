@@ -261,7 +261,7 @@ To incorporate the HMM results into the supervised models, we need to transform 
 To render these time series suitable for the supervised
 learning framework, we derive different informative metrics that capture the essential temporal
 and probabilistic characteristics of the guarding dynamics.
-In earlier work, such metrics were computed from the most likely guarded offensive player at each time point. Such counts, however, ignore the uncertainty of the decoding: a defender whose assignment is ambiguous throughout the motion may obtain zero or several switches depending on small fluctuations in the data. We therefore compute all metrics as expectations under the posterior distribution of the latent state sequence given the observations, which follow from a scaled forward--backward pass \citep{zucchini}.
+A natural approach would be to compute such metrics from the most likely guarded offensive player at each time point. Such counts, however, ignore the uncertainty of the decoding: a defender whose assignment is ambiguous throughout the motion may obtain zero or several switches depending on small fluctuations in the data. We therefore compute all metrics as expectations under the posterior distribution of the latent state sequence given the observations, which follow from a scaled forward--backward pass \citep{zucchini}.
 In particular, for each defender, we compute the expected number of switches of the guarding assignment,
 \begin{equation}\label{eq:decod}
 E_{\text{sw}} = \sum_{t=2}^{T_m} \Pr(S_t \neq S_{t-1} \mid y_1, \dots, y_{T_m}) = \sum_{t=2}^{T_m} \Bigl(1 - \sum_{k=1}^{5} \Pr(S_{t-1} = k, S_t = k \mid y_1, \dots, y_{T_m})\Bigr),
