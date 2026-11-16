@@ -1,7 +1,9 @@
 \documentclass[11pt,a4paper]{letter}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[margin=2.5cm]{geometry}
+\usepackage[left=2cm,right=2cm,top=1.6cm,bottom=1.6cm]{geometry}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.2em,topsep=2pt,itemsep=2pt}
 \usepackage{lmodern}
 \usepackage{hyperref}
 
@@ -17,7 +19,11 @@
 
 we would like to submit our manuscript ``Integrating Unsupervised and Supervised Learning for the Prediction and Interpretation of Defensive Schemes in American Football'' by Rouven Michels, Robert Bajons and Jan-Ole Fischer for consideration in the \textbf{JRSS-A Sport Data Science Special Issue}.
 
-Using player tracking data from the NFL, we propose a non-homogeneous hidden Markov model with random effects that infers which offensive player each defender guards during pre-snap motion. The model quantifies the defenders' reaction time, the persistence of guarding assignments and its variation across positions, teams and plays, with measures of uncertainty. Features derived from the posterior state probabilities carry information on the coverage scheme beyond simple motion summaries, as shown by conditional independence tests, while their predictive gain is small given the limited number of plays. As the fitted model can be applied to new plays at negligible cost, the approach scales to larger data sets. We believe the manuscript fits the special issue's focus on interpretation, uncertainty and prediction. The data were made publicly available as part of the NFL Big Data Bowl 2025, and all code is available at \url{https://github.com/RouvenM/HMMotion-code}.
+Using player tracking data from the NFL, we propose a non-homogeneous hidden Markov model with random effects that infers which offensive player each defender guards during pre-snap motion. Features derived from the posterior state probabilities carry information on the coverage scheme beyond simple motion summaries, although their predictive gain is small given the limited number of plays. The manuscript fits the special issue's focus on interpretation, uncertainty and prediction and combines a methodological contribution with a complete application:
+\begin{itemize}
+\item \textit{Methodological contribution.} We adapt hidden Markov models to reading defensive assignments: the state-dependent means are the lagged positions of the offensive players, so that the lag estimates the defenders' reaction time; switching depends on the distance between offensive players and on crossed random effects for positions, teams and plays, estimated for more than 21,000 time series via the Laplace approximation. Features are posterior expectations, so that the uncertainty of the assignments is propagated, and their contribution is assessed with generalized covariance measure tests, which also reveal the direction of the association.
+\item \textit{Substantive application.} The analysis covers all motion plays of the first nine weeks of the 2022 NFL season and addresses a question that coaches answer daily by film study. It yields interpretable results on how defenders react to motion and how this differs between positions, teams and plays, and the fitted model can be applied to new plays at negligible cost. The data were made publicly available as part of the NFL Big Data Bowl 2025; all code is available at \url{https://github.com/RouvenM/HMMotion-code}.
+\end{itemize}
 
 The manuscript is not under consideration elsewhere, and all authors have approved its submission.
 
@@ -25,7 +31,7 @@ The manuscript is not under consideration elsewhere, and all authors have approv
 
 \textbf{Use of AI.} An AI-based assistant (Claude, Anthropic) was used to support the implementation of the code and the drafting and language editing of the manuscript. The research questions, the modelling approach and the interpretation of the results are the authors' own; all code, results and text were reviewed by the authors, who take full responsibility for the content.
 
-\closing{Yours sincerely,}
+\par\medskip\noindent Yours sincerely,\par\vspace{2.5em}\noindent Rouven Michels, on behalf of all authors
 
 \end{letter}
 \end{document}
