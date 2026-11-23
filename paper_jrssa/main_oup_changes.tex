@@ -1,7 +1,7 @@
 %% JRSS-A submission version in the OUP authoring template
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL old_oup_tmp.tex   Mon Nov 16 09:25:06 2026
-%DIF ADD main_oup.tex      Mon Nov 16 09:25:06 2026
+%DIF DEL old_oup_tmp.tex   Mon Nov 23 09:10:06 2026
+%DIF ADD main_oup.tex      Mon Nov 23 09:09:49 2026
 %% (modern, medium, single column, numbered headings, author-year references).
 %% The working draft with the same content is main.tex.
 \documentclass[namedate,webpdf,modern,medium]{oup-authoring-template}
@@ -167,7 +167,7 @@ An HMM consists of two stochastic processes: an observed process $\{Y_t\}_{t=1}^
 \label{ind}
 f(y_t \mid s_1, \ldots, s_t, y_1, \ldots, y_{t-1},y_{t+1},\ldots,y_{T_m}) = f(y_t \mid S_t = s_t),
 \end{equation}
-where $s_t \in \{1, \ldots, N\}$ and $t = 1, \ldots, T_m$, with $m = 1, \ldots, M$ specifying the m-th play. Note that, according to this model formulation, we model the guarding assignments of every individual defender. Thus, we assume that the trajectories of individual defenders are statistically independent from those of their teammates. Hence, it is possible that multiple defenders are assigned to one of the $N$ offensive players in a specific play $m$ (which, in reality, does happen), but not vice versa. 
+where $s_t \in \{1, \ldots, N\}$ and $t = 1, \ldots, T_m$, with $m = 1, \ldots, M$ specifying the m-th play. Note that, according to this model formulation, we model the guarding assignments of every individual defender. Thus, we assume that the trajectories of individual defenders are \DIFdelbegin \DIFdel{statistically }\DIFdelend \DIFaddbegin \DIFadd{conditionally }\DIFaddend independent from those of their teammates. Hence, it is possible that multiple defenders are assigned to one of the $N$ offensive players in a specific play $m$ (which, in reality, does happen), but not vice versa. 
 We set $N=5$ due to the predetermined number of five offensive skill players that can potentially be guarded. 
 
 \begin{figure}[t!]
@@ -201,19 +201,25 @@ Given the 10 Hz temporal resolution of the data, $l$ can be interpreted as the n
 \DIFdelend \DIFaddbegin \subsubsection{Modelling the underlying Markov chain}
 \DIFaddend \label{sec:MC_dets}
 
-Within our HMM (see Figure~\ref{fig:HMM} for a visualization of the basic structure), the unobserved state process is \DIFdelbegin \DIFdel{modeled }\DIFdelend \DIFaddbegin \DIFadd{modelled }\DIFaddend as a first-order Markov chain. This is described by an initial distribution 
-$$\boldsymbol{\delta}^{(1)} = \bigl( \Pr(S_1=1), \ldots, \Pr(S_1=5) \bigr),$$ 
-that specifies the probability of every defender to guard the respective offensive players at the beginning of the time series, and a transition probability matrix (t.p.m.) 
-$$\boldsymbol{\Gamma} = (\gamma_{ij}),\ \text{with} \  \gamma_{ij} = \Pr(S_t = j \mid S_{t-1} = i), \quad i,j = 1, \ldots, 5$$
-The latter specifies the probability of a defender switching from guarding offensive player~$i$ at time~$t-1$ to offensive player~$j$ at time~$t$.
+Within our HMM (see Figure~\ref{fig:HMM} for a visualization of the basic structure), the unobserved state process is \DIFdelbegin \DIFdel{modeled }\DIFdelend \DIFaddbegin \DIFadd{modelled }\DIFaddend as a first-order Markov chain. This is described by 
+\DIFdelbegin \DIFdel{an initial distribution 
+}%DIFDELCMD < $$\boldsymbol{\delta}^{(1)} = \bigl( \Pr(S_1=1), \ldots, \Pr(S_1=5) \bigr),$$ 
+%DIFDELCMD < %%%
+\DIFdel{that specifies the probability of every defender to guard the respective offensive players at the beginning of the time series, and }\DIFdelend %DIF >  an initial distribution 
+%DIF >  $$\boldsymbol{\delta}^{(1)} = \bigl( \Pr(S_1=1), \ldots, \Pr(S_1=5) \bigr),$$ 
+%DIF >  that specifies the probability of every defender to guard the respective offensive players at the beginning of the time series, and 
+a transition probability matrix (t.p.m.) 
+\DIFdelbegin %DIFDELCMD < $$\boldsymbol{\Gamma} = (\gamma_{ij}),\ \text{with} \  \gamma_{ij} = \Pr(S_t = j \mid S_{t-1} = i), \quad i,j = 1, \ldots, 5$$%%%
+\DIFdelend \DIFaddbegin $$\boldsymbol{\Gamma} = (\gamma_{ij}),\ \text{with} \  \gamma_{ij} = \Pr(S_t = j \mid S_{t-1} = i), \quad i,j = 1, \ldots, 5,$$\DIFaddend 
+\DIFdelbegin \DIFdel{The latter }\DIFdelend \DIFaddbegin \DIFadd{that }\DIFaddend specifies the probability of a defender switching from guarding offensive player~$i$ at time~$t-1$ to offensive player~$j$ at time~$t$.
 In a simple model, we would estimate a single, homogeneous transition probability matrix (t.p.m.). However, we seek to obtain a more realistic representation of the switching probabilities by allowing them to vary with covariates. 
 Clearly, if a defender is currently guarding offensive player~$i$, a switch to guarding another offensive player~$j$ is more likely if those two are close in distance with respect to the $\mathrm{y}$-coordinate. Hence, we incorporate the pairwise distance between offensive players, i.e., $\vert \mathrm{y}_{t-l}(\text{off}_i) - \mathrm{y}_{t-l}(\text{off}_j) \vert$ for $i,j = 1, \ldots, 5$, as a covariate.
 Further, we account for systematic heterogeneity across different positions, teams, and plays by including specific random effects in the state-transition probabilities (\citealp{maruotti2009semiparametric}). Thus, for the positional role $r \in \{\text{Cornerback, Inside/Outside/Middle Linebacker, Strong/Free Safety}\}$\DIFaddbegin \footnote{\DIFadd{The few players listed with the generic positions defensive back and linebacker are assigned to cornerback and inside linebacker, respectively.}}\DIFaddend , the defensive team $d$ and the respective play $p$, this leads to mixed-effects linear predictors of the form
 \begin{equation}\label{eq:re}    
 \eta_{ij}^{(t,r,d,p)} = \beta_0 + \beta_1 \vert \mathrm{y}_{t-l}(\text{off}_i) -  \mathrm{y}_{t-l}(\text{off}_j) \vert + u_{r} + v_{d} + w_p,
 \end{equation}
-for $i \neq j$. Setting $\eta_{ii}^{(t,r,d,p)} \equiv 0$ for identifiability, we then express the transition probabilities of the unobserved Markov chain as functions of the above predictors using the inverse multinomial logistic link function
-$$
+for $i \neq j$. Setting $\eta_{ii}^{(t,r,d,p)} \equiv 0$ for identifiability, we then express the transition probabilities of the unobserved Markov chain as functions of the above predictors using the inverse multinomial logistic link function \DIFaddbegin \DIFadd{(softmax)
+}\DIFaddend $$
 \gamma_{ij}^{(t,r,d,p)} = \frac{\exp(\eta_{ij}^{(t,r,d,p)})}{\sum_{k=1}^N \exp(\eta_{ik}^{(t,r,d,p)})}, \quad i, j = 1, \dotsc, 5.
 $$
 
@@ -259,7 +265,8 @@ This hierarchical specification allows for partial pooling of information across
 % and $v_{ij}^{(\text{team}[t])} \sim \mathcal{N}(0, \sigma^2_{\text{team}})$ 
 % accounts for team-level tendencies.  
 
-Beyond transition dynamics, the underlying Markov chain requires an initial state distribution, denoted by $\boldsymbol{\delta}^{(1)}$, which specifies the probability of each defender guarding a particular offensive player at the beginning of time series. In many HMM applications, this initial distribution is of limited practical relevance and is often replaced by the stationary distribution of the transition probability matrix.
+Beyond transition dynamics, the underlying Markov chain requires an initial state distribution 
+\DIFdelbegin \DIFdel{, denoted by \mbox{$\boldsymbol{\delta}^{(1)}$}, }\DIFdelend \DIFaddbegin $$\boldsymbol{\delta}^{(1)} = \bigl( \Pr(S_1=1), \ldots, \Pr(S_1=5) \bigr),$$ \DIFaddend which specifies the probability of each defender guarding a particular offensive player at the beginning of time series. In many HMM applications, this initial distribution is of limited practical relevance and is often replaced by the stationary distribution of the transition probability matrix.
 However, in our setting this substitution would be inappropriate, as the initial distribution in the basic, homogeneous HMM is likely to differ substantially from the stationary one. In addition, an analytic solution for the stationary distribution of a non-homogeneous HMM can only be obtained for those that include periodic components in the underlying Markov chain (\citealp{koslik2025inference}), while a hypothetical stationary distribution would differ from the real one. This is particularly severe in our case, as the initial assignments carry meaningful information since they directly influence derived summary statistics such as the number of state transitions. Consequently, misspecifying $\boldsymbol{\delta}^{(1)}$ would distort these metrics and thereby have non-negligible effects on subsequent analyses. 
 A potential alternative would be to estimate the initial distribution parameters in a data-driven manner. Yet we face \DIFdelbegin \DIFdel{\mbox{$5 \times M = 5 \times 3963 =  19{,}815$} }\DIFdelend \DIFaddbegin \DIFadd{\mbox{$5 \times M = 5 \times 4344 = 21{,}720$} }\DIFaddend distinct time series, making individual estimation infeasible. To address this issue, we determine the initial state probabilities following a best-practice approach. Specifically, we model them as a function of observed spatial relationships between defensive and offensive players: higher initial state probabilities are assigned to offensive players that are locally close to the respective defenders, serving as a proxy for initial guarding assignments. \DIFaddbegin \DIFadd{Specifically, the initial distribution is a softmax of the negative lateral distances to the five offensive players, whose sharpness parameter \mbox{$\alpha$} we choose by profile likelihood. }\DIFaddend Details on the specific implementation are provided in Section~1 of the Supplementary Material.
 
@@ -272,7 +279,7 @@ We fit our hidden Markov model under a frequentist framework by directly maximiz
 \end{equation}
 where $\bm{\theta} = (\beta_0, \beta_1, \sigma, \sigma_u, \sigma_v, \sigma_w)$, and $\bm{u}$, $\bm{v}$, and $\bm{w}$ are vectors of random coefficients. 
 $f_{\bm{\beta}, \sigma}(\bm{y} \vert \bm{u}, \bm{v}, \bm{w})$ is the density of the data given a particular value of the random effects, i.e.\ treating them as parameters, and $f_{\sigma_u}(\bm{u})$, $f_{\sigma_{v}}(\bm{v})$, and $f_{\sigma_{w}}(\bm{w})$ are mean-zero multivariate Gaussian densities with covariance matrices $\sigma_u^2 \bm{I}$, $\sigma_v^2 \bm{I}$ and $\sigma_w^2 \bm{I}$, respectively.
-Due to the structure of the conditional density of $\bm{y}$ and the dimension of $\bm{u}$, $\bm{v}$ and $\bm{w}$, the above integral is analytically intractable, and hence needs to be evaluated approximately. This can be done using the so-called \textit{Laplace approximation}. A detailed explanation is given by \citet{kristensen2016tmb}, but the core idea is to approximate the log-integrand in \eqref{eqn:marginal_lik} (for fixed $\bm{\theta}$) around its mode (in $\bm{u}$, $\bm{v}$ and $\bm{w}$) by a quadratic function. Integrating the exponential of this quadratic function results in a Gaussian integral with a closed-form solution. Constructing the approximation around the mode means that for each evaluation of the marginal likelihood, an inner optimization over $\bm{u}$, $\bm{v}$ and $\bm{w}$ has to be performed.
+Due to the structure of the conditional density of $\bm{y}$ \DIFaddbegin \DIFadd{(the HMM likelihood; see below) }\DIFaddend and the dimension of $\bm{u}$, $\bm{v}$ and $\bm{w}$, the above integral is analytically intractable, and hence needs to be evaluated approximately. This can be done using the so-called \textit{Laplace approximation}. A detailed explanation is given by \citet{kristensen2016tmb}, but the core idea is to approximate the log-integrand in \eqref{eqn:marginal_lik} (for fixed $\bm{\theta}$) around its mode (in $\bm{u}$, $\bm{v}$ and $\bm{w}$) by a quadratic function. Integrating the exponential of this quadratic function results in a Gaussian integral with a closed-form solution. Constructing the approximation around the mode means that for each evaluation of the marginal likelihood, an inner optimization over $\bm{u}$, $\bm{v}$ and $\bm{w}$ has to be performed.
 
 In practice, we only need to specify the (negative) log-integrand in \eqref{eqn:marginal_lik}, that is, the \emph{negative joint log likelihood} of the data and the random effects as an \texttt{R} function. This is just the sum of the log likelihood of the data given the random coefficients and the logarithm of the Gaussian densities of the random coefficients. Based on this function, the \texttt{R} package \texttt{RTMB} \citep{rtmb} then generates a high-performance objective function approximating the logarithm of \eqref{eqn:marginal_lik} as well as an accompanying gradient using automatic differentiation. Internally, all computations are performed in \texttt{C++}. The returned objective function can then easily be numerically maximized using standard quasi-Newton numerical optimization routines such as the one implemented in \texttt{R}'s \texttt{nlminb} \citep{gay1990usage}, by supplying the objective function and its gradient.
 
@@ -292,7 +299,7 @@ Then, the conditional likelihood (given the position-, team- and play-specific r
 where $\bm{\delta}^{(1)}$ is the play- and defender-specific initial distribution calculated as outlined in the previous section, and $\bm{P}(y_t) = \text{diag}\bigl(f(y_t \vert S_t = 1), \dotsc, f(y_t \vert S_t = 5)\bigr)$ is a diagonal matrix containing the state-dependent distributions defined in \eqref{eqn:state_dep}.
 % Time series of different defenders within the same play and of different plays are treated as independent, hence their log-likelihood contributions are summed to obtain the full likelihood of the training data. 
 
-For practical implementation, we wrote a custom (negative joint log) likelihood function in \texttt{R}, using the function \texttt{forward\_(g)} 
+For practical implementation, we wrote a custom (negative joint log) likelihood function in \texttt{R}, using the function \texttt{forward\DIFdelbegin \DIFdel{\_}\DIFdelend (\DIFdelbegin \DIFdel{g}\DIFdelend )} 
 % and other convenience functions 
 from the \texttt{R} package \texttt{LaMa} \citep{koslikLaMa2025}, that allows evaluating the logarithm of \eqref{eqn:cond_lik} for all plays and all defenders, and thereby the computation of the term of interest $\log f_{\bm{\beta}, \sigma}(\bm{y} \vert \bm{u}, \bm{v}, \bm{w})$.
 
